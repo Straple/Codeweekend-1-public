@@ -19,8 +19,6 @@
     if (!(condition))              \
     FAILED_ASSERT(message)
 
-//_STL_VERIFY(condition, message) // don't work on CLion
-
 #else
 
 #define ASSERT(condition, message) /*condition*/ /**THIS CONDITION VERY IMPORTANT */
