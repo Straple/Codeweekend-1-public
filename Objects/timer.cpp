@@ -71,7 +71,7 @@ std::ostream &operator<<(std::ostream &output, const Timer &time) {
     } else if (t >= 1e-3) {
         output << t * 1e3 << "ms";
     } else if (t >= 1e-6) {
-        output << t * 1e6 << static_cast<char>(230) << "s";
+        output << t * 1e6 << "us";
     } else if (t >= 1e-9) {
         output << t * 1e9 << "ns";
     } else {

@@ -1,6 +1,6 @@
 #include "test_data.hpp"
-#include <climits>
 #include "../assert.hpp"
+#include <climits>
 
 std::istream &operator>>(std::istream &input, TestData &data) {
     ASSERT(input, "unable to read");

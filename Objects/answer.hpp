@@ -25,9 +25,6 @@ struct Answer {
 
 bool operator<(const Answer &lhs, const Answer &rhs);
 
-struct FailedReadAnswer : std::exception {
-};
-
 std::ostream &operator<<(std::ostream &output, const Answer &answer);
 
 std::istream &operator>>(std::istream &input, Answer &answer);

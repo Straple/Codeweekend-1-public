@@ -1,6 +1,7 @@
 #pragma once
 
 #include <random>
+#include "../assert.hpp"
 
 struct Randomizer {
     std::mt19937_64 generator;
@@ -21,4 +22,10 @@ public:
 
     // double [left, right]
     double get_d(double left, double right);
+
+    template<typename Container_t>
+    auto& get(Container_t &container) {
+        ASSERT(!container.empty(), "container is empty");
+        return *std::next(container.begin(), get(0, container.size() - 1));
+    }
 };
