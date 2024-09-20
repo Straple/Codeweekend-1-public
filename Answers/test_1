@@ -1,0 +1,63 @@
+score: 311
+{
+	"moves": [
+		{
+			"type": "move",
+			"target_x": 71,
+			"target_y": 56
+		},
+		{
+			"type": "attack",
+			"target_id": 1
+		},
+		{
+			"type": "move",
+			"target_x": 62,
+			"target_y": 53
+		},
+		{
+			"type": "attack",
+			"target_id": 3
+		},
+		{
+			"type": "move",
+			"target_x": 71,
+			"target_y": 56
+		},
+		{
+			"type": "move",
+			"target_x": 72,
+			"target_y": 52
+		},
+		{
+			"type": "move",
+			"target_x": 71,
+			"target_y": 56
+		},
+		{
+			"type": "move",
+			"target_x": 72,
+			"target_y": 52
+		},
+		{
+			"type": "move",
+			"target_x": 71,
+			"target_y": 56
+		},
+		{
+			"type": "move",
+			"target_x": 72,
+			"target_y": 52
+		},
+		{
+			"type": "move",
+			"target_x": 71,
+			"target_y": 56
+		},
+		{
+			"type": "move",
+			"target_x": 62,
+			"target_y": 53
+		}
+	]
+}
