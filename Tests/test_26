@@ -1,0 +1,80 @@
+{
+    "height": 100,
+    "hero": {
+        "base_power": 70,
+        "base_range": 10,
+        "base_speed": 10,
+        "level_power_coeff": 50,
+        "level_range_coeff": 50,
+        "level_speed_coeff": 50
+    },
+    "num_turns": 14,
+    "start_x": 46,
+    "start_y": 44,
+    "width": 100,
+    "monsters": [
+        {
+            "attack": 29,
+            "exp": 55,
+            "gold": 154,
+            "hp": 55,
+            "range": 8,
+            "x": 80,
+            "y": 59
+        },
+        {
+            "attack": 23,
+            "exp": 77,
+            "gold": 777,
+            "hp": 61,
+            "range": 19,
+            "x": 7,
+            "y": 6
+        },
+        {
+            "attack": 15,
+            "exp": 44,
+            "gold": 171,
+            "hp": 54,
+            "range": 7,
+            "x": 50,
+            "y": 80
+        },
+        {
+            "attack": 20,
+            "exp": 67,
+            "gold": 227,
+            "hp": 73,
+            "range": 9,
+            "x": 40,
+            "y": 70
+        },
+        {
+            "attack": 36,
+            "exp": 90,
+            "gold": 177,
+            "hp": 70,
+            "range": 5,
+            "x": 50,
+            "y": 60
+        },
+        {
+            "attack": 20,
+            "exp": 41,
+            "gold": 170,
+            "hp": 51,
+            "range": 10,
+            "x": 63,
+            "y": 81
+        },
+        {
+            "attack": 41,
+            "exp": 285,
+            "gold": 238,
+            "hp": 91,
+            "range": 8,
+            "x": 60,
+            "y": 70
+        }
+    ]
+}
