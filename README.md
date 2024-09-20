@@ -24,3 +24,12 @@ https://codeweekend.dev/#/dashboard
 
 https://codeweekend.dev/#/submissions
 
+Условие задачи. Сначала выложили первую часть и соответсвенно тесты 1-25
+
+https://drive.google.com/file/d/1LSNJM-XVje0_AtxQFmeStCdD3dttxBbp/view
+
+Затем вторая часть, немного дополненное условие (добавилось, что монстры могут бить героя) и тесты 26-50. Желтым выделены изменения в условии
+
+https://drive.google.com/file/d/1ogJtACkj3MIGnIE9Ar3eeEW_EFPil3yX/view
+
+Но вообще можете писать решение сразу для полного условия
