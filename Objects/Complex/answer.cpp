@@ -1,21 +1,43 @@
 #include <Objects/Complex/answer.hpp>
 
 #include <Objects/Basic/assert.hpp>
+#include <Objects/nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 bool operator==(const Action &lhs, const Action &rhs) {
     return lhs.type == rhs.type &&
            lhs.x == rhs.x &&
            lhs.y == rhs.y &&
-           lhs.target_id == rhs.target_id;
-}
-
-bool operator<(const Answer &lhs, const Answer &rhs) {
-    return lhs.score < rhs.score;
+           lhs.attack_id == rhs.attack_id;
 }
 
 std::ostream &operator<<(std::ostream &output, const Answer &answer) {
-    output << "score: " << answer.score << '\n';
-    output << "{\n";
+    json json;
+
+    json["x"] = answer.x;
+    json["y"] = answer.y;
+    json["exp"] = answer.exp;
+    json["gold"] = answer.gold;
+    json["level"] = answer.level;
+    json["fatigue"] = answer.fatigue;
+
+    for (auto action: answer.actions) {
+        if (action.type == Action::Action_t::ATTACK) {
+            json["moves"].push_back({
+                    {"type", "attack"},
+                    {"target_id", action.attack_id},
+            });
+        } else {
+            json["moves"].push_back({
+                    {"type", "move"},
+                    {"target_x", action.x},
+                    {"target_y", action.y},
+            });
+        }
+    }
+    output << json;
+    /*output << "{\n";
     output << "\t\"moves\": [\n";
     for (int i = 0; i < answer.actions.size(); i++) {
         auto &action = answer.actions[i];
@@ -25,7 +47,7 @@ std::ostream &operator<<(std::ostream &output, const Answer &answer) {
             output << "\t\t\t\"target_x\": " << action.x << ",\n";
             output << "\t\t\t\"target_y\": " << action.y << "\n";
         } else {
-            output << "\t\t\t\"target_id\": " << action.target_id << "\n";
+            output << "\t\t\t\"target_id\": " << action.attack_id << "\n";
         }
         output << "\t\t}";
         if (i + 1 < answer.actions.size()) {
@@ -34,7 +56,7 @@ std::ostream &operator<<(std::ostream &output, const Answer &answer) {
         output << "\n";
     }
     output << "\t]\n";
-    output << "}\n";
+    output << "}\n";*/
     return output;
 }
 

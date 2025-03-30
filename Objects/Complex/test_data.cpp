@@ -88,3 +88,7 @@ std::ostream &operator<<(std::ostream &output, const TestData &data) {
 
     return output;
 }
+
+uint32_t get_dist(uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1) {
+    return (x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1);
+}

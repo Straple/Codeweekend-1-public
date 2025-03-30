@@ -10,20 +10,25 @@ struct Action {
         ATTACK,
     } type;
 
-    int64_t x;
-    int64_t y;
+    uint32_t x;
+    uint32_t y;
 
-    int64_t target_id;
+    uint32_t attack_id;
 };
 
 bool operator==(const Action &lhs, const Action &rhs);
 
 struct Answer {
-    int64_t score = 0;
+    // информация о герое
+    uint32_t x = 0;
+    uint32_t y = 0;
+    uint32_t exp = 0;
+    uint32_t gold = 0;
+    uint32_t level = 0;
+    uint32_t fatigue = 0;
+
     std::vector<Action> actions;
 };
-
-bool operator<(const Answer &lhs, const Answer &rhs);
 
 std::ostream &operator<<(std::ostream &output, const Answer &answer);
 
