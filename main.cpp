@@ -56,19 +56,20 @@ int main() {
         input >> data;
     }*/
 
-    /*for (int test = 1; test <= 50; test++) {
+    /*for (int test = 1; test <= 25; test++) {
         TestData data;
         std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
         input >> data;
-        std::cout << data.height << ' ' << data.width << ' ' << data.monsters.size() << '\n';
-    }*/
+        std::cout << test << ' ' << data.height << ' ' << data.width << ' ' << data.monsters.size() << '\n';
+    }
+    return 0;*/
 
     uint32_t test = 3;
     TestData test_data;
     std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
     input >> test_data;
 
-    Solver solver(test_data);
+    Solver solver(test_data, 404);
     Answer answer = solver.solve(303);
     std::ofstream output("Solutions/test_" + std::to_string(test) + ".json");
     output << answer;

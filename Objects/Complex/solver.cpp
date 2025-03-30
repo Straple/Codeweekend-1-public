@@ -183,25 +183,22 @@ bool Solver::try_reverse(Randomizer &rnd) {
     }
 }
 
-Solver::Solver(TestData copy_test_data) : test_data(std::move(copy_test_data)) {
+Solver::Solver(TestData copy_test_data, uint64_t random_seed) : test_data(std::move(copy_test_data)) {
     ASSERT(!test_data.monsters.empty(), "monsters is empty");
 
+    Randomizer rnd(random_seed);
     monsters_order.resize(test_data.monsters.size());
     std::iota(monsters_order.begin(), monsters_order.end(), 0);
+    std::shuffle(monsters_order.begin(), monsters_order.end(), rnd.generator);
     answer = simulate(monsters_order, test_data);
 }
 
 Answer Solver::solve(uint64_t random_seed) {
     Randomizer rnd(random_seed);
 
-    // std::shuffle(monsters_order.begin(), monsters_order.end(), rnd.generator);
-    // answer = simulate(monsters_order, test_data);
-
     ETimer timer;
 
-    // improve: 81859, step: 999, time: 52.6712s
-    // improve: 78960, step: 999, time: 185.686ms
-    // improve: 182675, step: 999996, time: 64.7853s
+    // improve: 189606, step: 999997, time: 63.4635s
     for (uint32_t step = 0; step < 1'000'000; step++) {
         bool verdict = false;
         if (rnd.get_d() < 0.5) {

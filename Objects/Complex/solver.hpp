@@ -21,7 +21,7 @@ class Solver {
     bool try_reverse(Randomizer &rnd);
 
 public:
-    Solver(TestData copy_test_data);
+    Solver(TestData test_data, uint64_t random_seed);
 
     Answer solve(uint64_t random_seed);
 };
