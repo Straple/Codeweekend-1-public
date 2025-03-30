@@ -10,7 +10,7 @@
 #include <thread>
 
 int main() {
-    std::cout << "Randomizer example:" << std::endl;
+    /*std::cout << "Randomizer example:" << std::endl;
     Randomizer rnd(42);
     std::cout << rnd.get() << std::endl;       // random uint64_t
     std::cout << rnd.get(-3, 5) << std::endl;  // random int64_t e [-3, 5]
@@ -53,5 +53,12 @@ int main() {
         TestData data;
         std::ifstream input("Tests/test_" + std::to_string(test));
         input >> data;
-    }
+    }*/
+
+    /*for (int test = 1; test <= 50; test++) {
+        TestData data;
+        std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
+        input >> data;
+        std::cout << data.height << ' ' << data.width << ' ' << data.monsters.size() << '\n';
+    }*/
 }

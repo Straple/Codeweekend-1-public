@@ -1,8 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <iostream>
 #include <vector>
-#include <cstdint>
 
 struct Action {
     enum Action_t {
@@ -14,9 +14,9 @@ struct Action {
     int64_t y;
 
     int64_t target_id;
-
-    friend bool operator==(Action lhs, Action rhs);
 };
+
+bool operator==(const Action &lhs, const Action &rhs);
 
 struct Answer {
     int64_t score = 0;

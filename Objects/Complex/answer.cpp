@@ -2,7 +2,7 @@
 
 #include <Objects/Basic/assert.hpp>
 
-bool operator==(Action lhs, Action rhs) {
+bool operator==(const Action &lhs, const Action &rhs) {
     return lhs.type == rhs.type &&
            lhs.x == rhs.x &&
            lhs.y == rhs.y &&
@@ -40,9 +40,10 @@ std::ostream &operator<<(std::ostream &output, const Answer &answer) {
 
 std::istream &operator>>(std::istream &input, Answer &answer) {
     ASSERT(input, "unable to read");
-    answer.score = readInt(input);
+    FAILED_ASSERT("TODO");
+    //answer.score = readInt(input);
 
-    while (true) {
+    /*while (true) {
         Action action;
         std::string s;
         bool ok = false;
@@ -63,14 +64,14 @@ std::istream &operator>>(std::istream &input, Answer &answer) {
         }
 
         if (action.type == Action::Action_t::MOVE) {
-            action.x = readInt(input);
-            action.y = readInt(input);
+            //action.x = readInt(input);
+            //action.y = readInt(input);
         } else {
-            action.target_id = readInt(input);
+            //action.target_id = readInt(input);
         }
 
         answer.actions.push_back(action);
-    }
+    }*/
 
     return input;
 }

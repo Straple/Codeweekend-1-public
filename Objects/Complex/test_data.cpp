@@ -1,52 +1,53 @@
 #include <Objects/Complex/test_data.hpp>
 
 #include <Objects/Basic/assert.hpp>
+#include <Objects/nlohmann/json.hpp>
 
-#include <climits>
+using json = nlohmann::json;
 
 std::istream &operator>>(std::istream &input, TestData &data) {
     ASSERT(input, "unable to read");
 
-    data.height = readInt(input);
+    try {
+        json json = json::parse(input);
 
-    data.hero.base_power = readInt(input);
-    data.hero.base_range = readInt(input);
-    data.hero.base_speed = readInt(input);
-    data.hero.level_power_coeff = readInt(input);
-    data.hero.level_range_coeff = readInt(input);
-    data.hero.level_speed_coeff = readInt(input);
+        data.height = json["height"];
+        data.width = json["width"];
 
-    data.num_turns = readInt(input);
-    data.start_x = readInt(input);
-    data.start_y = readInt(input);
-    data.width = readInt(input);
+        data.start_x = json["start_x"];
+        data.start_y = json["start_y"];
 
-    while (true) {
-        Monster monster;
-        if (!input) {
-            break;
+        data.num_turns = json["num_turns"];
+
+        data.hero.base_power = json["hero"]["base_power"];
+        data.hero.base_range = json["hero"]["base_range"];
+        data.hero.base_speed = json["hero"]["base_speed"];
+        data.hero.level_power_coeff = json["hero"]["level_power_coeff"];
+        data.hero.level_range_coeff = json["hero"]["level_range_coeff"];
+        data.hero.level_speed_coeff = json["hero"]["level_speed_coeff"];
+
+        for (auto &json_monster: json["monsters"]) {
+            Monster monster;
+            monster.x = json_monster["x"];
+            monster.y = json_monster["y"];
+            monster.hp = json_monster["hp"];
+            monster.attack = json_monster["attack"];
+            monster.exp = json_monster["exp"];
+            monster.gold = json_monster["gold"];
+            monster.range = json_monster["range"];
+            data.monsters.emplace_back(monster);
         }
 
-        monster.attack = readInt(input);
-        if (monster.attack == LLONG_MAX) {
-            break;
-        }
-        monster.exp = readInt(input);
-        monster.gold = readInt(input);
-        monster.hp = readInt(input);
-        monster.range = readInt(input);
-        monster.x = readInt(input);
-        monster.y = readInt(input);
-
-        data.monsters.push_back(monster);
+    } catch (const json::parse_error &error) {
+        FAILED_ASSERT("TestData read failed, message: >" + std::string(error.what()) + "<");
     }
 
     return input;
 }
 
 std::ostream &operator<<(std::ostream &output, const TestData &data) {
-
-    output << "{\n";
+    FAILED_ASSERT("TODO");
+    /*output << "{\n";
 
     output << "\t\"height\": " << data.height << ",\n";
 
@@ -83,31 +84,7 @@ std::ostream &operator<<(std::ostream &output, const TestData &data) {
     }
     output << "\t]\n";
 
-    output << "}\n";
+    output << "}\n";*/
 
     return output;
-}
-
-int64_t readInt(std::istream &input) {
-    while (input) {
-        char c;
-        input >> c;
-        if (c == '-' || c == '+' || ('0' <= c && c <= '9')) {
-            // int!
-            long long x = 0;
-            if ('0' <= c && c <= '9') {
-                x = c - '0';
-            }
-            char dig;
-            while ((input >> dig) && ('0' <= dig && dig <= '9')) {
-                x *= 10;
-                x += dig - '0';
-            }
-            if (c == '-') {
-                x *= -1;
-            }
-            return x;
-        }
-    }
-    return LLONG_MAX;
 }

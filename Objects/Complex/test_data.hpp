@@ -39,5 +39,3 @@ struct TestData {
 std::istream &operator>>(std::istream &input, TestData &data);
 
 std::ostream &operator<<(std::ostream &output, const TestData &data);
-
-int64_t readInt(std::istream &input);
