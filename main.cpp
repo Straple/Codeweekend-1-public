@@ -23,7 +23,7 @@ void run_solver() {
 
     std::ofstream logger("log.csv");
 
-    logger << "thr,test,gold,time\n";
+    logger << "thr,test,gold,solve time,total time\n";
 
     std::vector<TestData> tests_data(51);
     for (uint32_t test = 1; test <= 50; test++) {
@@ -35,6 +35,8 @@ void run_solver() {
     for (auto &i: is_free) {
         i = true;
     }
+
+    ETimer total_timer;
 
     std::mutex mutex;
 
@@ -81,7 +83,7 @@ void run_solver() {
                 output << answer;
 
                 std::unique_lock locker(mutex);
-                logger << thr << ',' << test << ',' << answer.gold << ',' << timer.get_ms() / 1000.0 << std::endl;
+                logger << thr << ',' << test << ',' << answer.gold << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
             }
 
             is_free[test] = true;
@@ -98,15 +100,15 @@ void run_solver() {
 }
 
 int main() {
-    run_solver();
+    //run_solver();
 
-    /*uint32_t test = 3;
+    uint32_t test = 20;
     TestData test_data;
     std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
     input >> test_data;
 
-    Solver solver(test_data, 404);
+    Solver solver(test_data);
     Answer answer = solver.solve(303);
     std::ofstream output("Solutions/test_" + std::to_string(test) + ".json");
-    output << answer;*/
+    output << answer;
 }

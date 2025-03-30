@@ -3,6 +3,8 @@
 #include <Objects/Basic/assert.hpp>
 #include <Objects/Basic/time.hpp>
 
+#include <set>
+
 bool compare(double old_score, double cur_score, double temp, Randomizer &rnd) {
     return cur_score >= old_score || rnd.get_d() < std::exp(-((old_score - cur_score) / old_score) / temp);
 }
@@ -13,6 +15,12 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, const TestData &tes
     answer.x = test_data.start_x;
     answer.y = test_data.start_y;
     answer.monsters_order = monsters_order;
+
+    /*std::set<uint32_t> S;
+    for (uint32_t monster_id: monsters_order) {
+        S.insert(monster_id);
+    }
+    ASSERT(S.size() == monsters_order.size(), "invalid monsters order");*/
 
     for (uint32_t monster_it = 0; monster_it < monsters_order.size(); monster_it++) {
         uint32_t monster_id = monsters_order[monster_it];
@@ -68,8 +76,9 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, const TestData &tes
                 double len = std::sqrt(dx * dx + dy * dy);
                 dx /= len;
                 dy /= len;
-                px = answer.x + dx * std::min(speed * 1.0, len);
-                py = answer.y + dy * std::min(speed * 1.0, len);
+                len = std::min(speed * 1.0, len);
+                px = answer.x + dx * len;
+                py = answer.y + dy * len;
 
                 uint32_t K = 2;
 
@@ -151,29 +160,65 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, const TestData &tes
 }
 
 bool Solver::try_swap(Randomizer &rnd) {
-    uint32_t a = rnd.get(0, monsters_order.size() - 1);
-    uint32_t b = rnd.get(0, monsters_order.size() - 1);
+    Answer new_answer = answer;
+    uint32_t a = rnd.get(0, new_answer.monsters_order.size() - 1);
+    uint32_t b = rnd.get(0, new_answer.monsters_order.size() - 1);
 
     if (a == b) {
         return false;
     }
 
-    std::swap(monsters_order[a], monsters_order[b]);
+    std::swap(new_answer.monsters_order[a], new_answer.monsters_order[b]);
 
-    Answer new_answer = simulate(monsters_order, test_data);
+    new_answer = simulate(new_answer.monsters_order, test_data);
 
     if (compare(answer.score, new_answer.score, temp, rnd)) {
         answer = std::move(new_answer);
         return true;
     } else {
-        std::swap(monsters_order[a], monsters_order[b]);
+        return false;
+    }
+}
+
+bool Solver::try_throw(Randomizer &rnd) {
+    Answer new_answer = answer;
+    uint32_t a = rnd.get(0, new_answer.monsters_order.size() - 2);
+
+    std::swap(new_answer.monsters_order[a], new_answer.monsters_order.back());
+
+    new_answer = simulate(new_answer.monsters_order, test_data);
+
+    if (compare(answer.score, new_answer.score, temp, rnd)) {
+        answer = std::move(new_answer);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool Solver::try_insert(Randomizer &rnd) {
+    Answer new_answer = answer;
+
+    uint32_t a = rnd.get(0, new_answer.monsters_order.size() - 1);
+    uint32_t monster_id = new_answer.monsters_order[a];
+    new_answer.monsters_order.erase(new_answer.monsters_order.begin() + a);
+
+    new_answer.monsters_order.insert(new_answer.monsters_order.begin() + rnd.get(0, new_answer.monsters_order.size()), monster_id);
+
+    new_answer = simulate(new_answer.monsters_order, test_data);
+
+    if (compare(answer.score, new_answer.score, temp, rnd)) {
+        answer = std::move(new_answer);
+        return true;
+    } else {
         return false;
     }
 }
 
 bool Solver::try_reverse(Randomizer &rnd) {
-    uint32_t l = rnd.get(0, monsters_order.size() - 1);
-    uint32_t r = rnd.get(0, monsters_order.size() - 1);
+    Answer new_answer = answer;
+    uint32_t l = rnd.get(0, new_answer.monsters_order.size() - 1);
+    uint32_t r = rnd.get(0, new_answer.monsters_order.size() - 1);
 
     if (l > r) {
         std::swap(l, r);
@@ -182,22 +227,29 @@ bool Solver::try_reverse(Randomizer &rnd) {
         return false;
     }
 
-    std::reverse(monsters_order.begin() + l, monsters_order.begin() + r);
+    std::reverse(new_answer.monsters_order.begin() + l, new_answer.monsters_order.begin() + r);
 
-    Answer new_answer = simulate(monsters_order, test_data);
+    new_answer = simulate(new_answer.monsters_order, test_data);
 
     if (compare(answer.score, new_answer.score, temp, rnd)) {
         answer = std::move(new_answer);
         return true;
     } else {
-        std::reverse(monsters_order.begin() + l, monsters_order.begin() + r);
         return false;
     }
 }
 
-Solver::Solver(std::vector<uint32_t> copy_monsters_order, TestData copy_test_data) : monsters_order(std::move(copy_monsters_order)), test_data(std::move(copy_test_data)) {
+Solver::Solver(std::vector<uint32_t> copy_monsters_order, TestData copy_test_data) : test_data(std::move(copy_test_data)) {
     ASSERT(!test_data.monsters.empty(), "monsters is empty");
-    answer = simulate(monsters_order, test_data);
+    answer.monsters_order = std::move(copy_monsters_order);
+    answer = simulate(answer.monsters_order, test_data);
+}
+
+Solver::Solver(TestData copy_test_data) : test_data(std::move(copy_test_data)) {
+    ASSERT(!test_data.monsters.empty(), "monsters is empty");
+    answer.monsters_order.resize(test_data.monsters.size());
+    std::iota(answer.monsters_order.begin(), answer.monsters_order.end(), 0);
+    answer = simulate(answer.monsters_order, test_data);
 }
 
 Answer Solver::solve(uint64_t random_seed) {
@@ -205,45 +257,56 @@ Answer Solver::solve(uint64_t random_seed) {
 
     // случайно пореверсим порядок монстров
     {
-        uint32_t k = rnd.get(0, 10);
+        uint32_t k = rnd.get_d() < 0.5 ? 0 : rnd.get(0, 3);
         for (uint32_t i = 0; i < k; i++) {
-            uint32_t l = rnd.get(0, monsters_order.size() - 1);
-            uint32_t r = rnd.get(0, monsters_order.size() - 1);
+            uint32_t l = rnd.get(0, answer.monsters_order.size() - 1);
+            uint32_t r = rnd.get(0, answer.monsters_order.size() - 1);
 
             if (l > r) {
                 std::swap(l, r);
             }
 
-            std::reverse(monsters_order.begin() + l, monsters_order.begin() + r);
+            std::reverse(answer.monsters_order.begin() + l, answer.monsters_order.begin() + r);
         }
-        answer = simulate(monsters_order, test_data);
+        answer = simulate(answer.monsters_order, test_data);
     }
 
     ETimer timer;
 
+    // test: 3
     // gold: 197819, score: 237690, step: 1000000, time: 26.2046s, temp: 1.0025e-05
-    for (uint32_t step = 0;; step++) {
-        if (step % 1'000 == 0 && timer.get_ms() > 10'000) {
-            break;
-        }
-        bool verdict = false;
-        if (rnd.get_d() < 0.5) {
-            verdict = try_swap(rnd);
-        } else {
-            verdict = try_reverse(rnd);
-        }
-
-        if (verdict) {
-            temp *= 0.999;
-            temp = std::max(temp, 0.00001);
-        } else {
-            temp *= 1.0005;
-            temp = std::min(temp, 0.001);
-        }
-
-        //if (step % 1'000 == 0) {
-        // std::cout << "gold: " << answer.gold << ", score: " << answer.score << ", step: " << step << ", time: " << timer << ", temp: " << temp << '\n';
+    // ========================================================================================
+    // test: 20
+    // gold: 305000, score: 321254, step: 1000000, time: 65.0669s, temp: 1.0005e-05
+    // gold: 327000, score: 343848, step: 1000000, time: 61.2345s, temp: 1.21647e-05
+    // gold: 378000, score: 395827, step: 1000000, time: 70.1689s, temp: 2.67983e-05
+    // gold: 386001, score: 404707, step: 1000000, time: 63.5259s, temp: 1.38461e-05
+    for (uint32_t step = 0; step <= 1'000'000; step++) {
+        //if (step % 1'000 == 0 && timer.get_ms() > 10'000) {
+        //    break;
         //}
+        double old_score = answer.score;
+
+        double p = rnd.get_d();
+        if (p < 0.3) {
+            try_swap(rnd);
+        }
+        //else if (p < 0.6) {try_throw(rnd);}
+        else if (p < 0.9) {
+            try_insert(rnd);
+        } else {
+            try_reverse(rnd);
+        }
+
+        if (old_score < answer.score) {
+            temp = std::min(temp * 0.9999, 0.00001);
+        } else {
+            temp = std::min(temp * 1.0005, 0.002);
+        }
+
+        if (step % 1'000 == 0) {
+            std::cout << "gold: " << answer.gold << ", score: " << answer.score << ", step: " << step << ", time: " << timer << ", temp: " << temp << '\n';
+        }
     }
     return answer;
 }

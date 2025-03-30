@@ -8,4 +8,4 @@ constexpr uint32_t THREADS = 6;
 
 constexpr uint32_t RANDOM_SEED = 42;
 
-// tests 1-25, total score: 16031.87
+// tests 1-25, total score: 16031.87 -> 17657.83
