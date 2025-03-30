@@ -1,8 +1,8 @@
 #pragma once
 
-#include "test_data.hpp"
 #include <iostream>
 #include <vector>
+#include <cstdint>
 
 struct Action {
     enum Action_t {
@@ -10,16 +10,16 @@ struct Action {
         ATTACK,
     } type;
 
-    cnt_t x;
-    cnt_t y;
+    int64_t x;
+    int64_t y;
 
-    cnt_t target_id;
+    int64_t target_id;
 
     friend bool operator==(Action lhs, Action rhs);
 };
 
 struct Answer {
-    cnt_t score = 0;
+    int64_t score = 0;
     std::vector<Action> actions;
 };
 

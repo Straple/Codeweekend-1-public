@@ -1,7 +1,7 @@
-#include "Objects/answer.hpp"
-#include "Objects/randomizer.hpp"
-#include "Objects/test_data.hpp"
-#include "Objects/timer.hpp"
+#include <Objects/Complex/answer.hpp>
+#include <Objects/Complex/test_data.hpp>
+#include <Objects/Basic/randomizer.hpp>
+#include <Objects/Basic/time.hpp>
 
 #include <chrono>
 #include <fstream>
@@ -22,7 +22,7 @@ int main() {
     std::cout << rnd.get(my_set) << std::endl;// random element from container
 
     std::cout << "Timer example:" << std::endl;
-    Timer timer;// get tick from constructor
+    ETimer timer;// get tick from constructor
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     std::cout << timer << std::endl;// beautiful output time
     timer.reset();                  // reset time tick

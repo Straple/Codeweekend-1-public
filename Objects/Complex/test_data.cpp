@@ -1,5 +1,7 @@
-#include "test_data.hpp"
-#include "../assert.hpp"
+#include <Objects/Complex/test_data.hpp>
+
+#include <Objects/Basic/assert.hpp>
+
 #include <climits>
 
 std::istream &operator>>(std::istream &input, TestData &data) {
@@ -86,7 +88,7 @@ std::ostream &operator<<(std::ostream &output, const TestData &data) {
     return output;
 }
 
-long long readInt(std::istream &input) {
+int64_t readInt(std::istream &input) {
     while (input) {
         char c;
         input >> c;

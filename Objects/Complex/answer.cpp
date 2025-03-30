@@ -1,5 +1,6 @@
-#include "answer.hpp"
-#include "../assert.hpp"
+#include <Objects/Complex/answer.hpp>
+
+#include <Objects/Basic/assert.hpp>
 
 bool operator==(Action lhs, Action rhs) {
     return lhs.type == rhs.type &&
