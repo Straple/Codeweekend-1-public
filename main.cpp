@@ -63,13 +63,13 @@ int main() {
         std::cout << data.height << ' ' << data.width << ' ' << data.monsters.size() << '\n';
     }*/
 
-    uint32_t test = 1;
+    uint32_t test = 3;
     TestData test_data;
     std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
     input >> test_data;
 
     Solver solver(test_data);
-    Answer answer = solver.solve(42);
+    Answer answer = solver.solve(303);
     std::ofstream output("Solutions/test_" + std::to_string(test) + ".json");
     output << answer;
 }

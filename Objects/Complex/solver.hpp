@@ -14,7 +14,11 @@ class Solver {
 
     Answer answer;
 
+    double temp = 1;
+
     bool try_swap(Randomizer &rnd);
+
+    bool try_reverse(Randomizer &rnd);
 
 public:
     Solver(TestData copy_test_data);
