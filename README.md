@@ -33,3 +33,6 @@ https://drive.google.com/file/d/1LSNJM-XVje0_AtxQFmeStCdD3dttxBbp/view
 https://drive.google.com/file/d/1ogJtACkj3MIGnIE9Ar3eeEW_EFPil3yX/view
 
 Но вообще можете писать решение сразу для полного условия
+
+Чтобы посмотреть визуализацию, нажмите здесь, слева не работает
+![image](https://github.com/user-attachments/assets/4d89e75e-5884-4969-bb2f-8d6e4f2299f4)
