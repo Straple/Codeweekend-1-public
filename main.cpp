@@ -1,7 +1,8 @@
-#include <Objects/Complex/answer.hpp>
-#include <Objects/Complex/test_data.hpp>
 #include <Objects/Basic/randomizer.hpp>
 #include <Objects/Basic/time.hpp>
+#include <Objects/Complex/answer.hpp>
+#include <Objects/Complex/solver.hpp>
+#include <Objects/Complex/test_data.hpp>
 
 #include <chrono>
 #include <fstream>
@@ -61,4 +62,14 @@ int main() {
         input >> data;
         std::cout << data.height << ' ' << data.width << ' ' << data.monsters.size() << '\n';
     }*/
+
+    uint32_t test = 1;
+    TestData test_data;
+    std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
+    input >> test_data;
+
+    Solver solver(test_data);
+    Answer answer = solver.solve(42);
+    std::ofstream output("Solutions/test_" + std::to_string(test) + ".json");
+    output << answer;
 }

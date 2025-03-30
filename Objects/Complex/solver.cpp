@@ -1,0 +1,126 @@
+#include <Objects/Complex/solver.hpp>
+
+#include <Objects/Basic/assert.hpp>
+
+Answer simulate(const std::vector<uint32_t> &monsters_order, const TestData &test_data) {
+
+    Answer answer;
+    answer.x = test_data.start_x;
+    answer.y = test_data.start_y;
+
+    for (uint32_t monster_id: monsters_order) {
+        auto &monster = test_data.monsters[monster_id];
+
+        uint32_t speed = (test_data.hero.base_speed * (100 + answer.level * test_data.hero.level_speed_coeff)) / 100;
+        uint32_t power = (test_data.hero.base_power * (100 + answer.level * test_data.hero.level_power_coeff)) / 100;
+        uint32_t range = (test_data.hero.base_range * (100 + answer.level * test_data.hero.level_range_coeff)) / 100;
+
+        if (answer.actions.size() == test_data.num_turns) {
+            break;
+        }
+
+        // дойдем до монстра
+        while (answer.actions.size() < test_data.num_turns && get_dist(answer.x, answer.y, monster.x, monster.y) > range * range) {
+            auto get_move_to = [&]() -> std::pair<uint32_t, uint32_t> {
+                // TODO: оптимизировать
+
+                uint32_t best_to_x = answer.x;
+                uint32_t best_to_y = answer.y;
+
+                uint32_t left_x = answer.x < speed ? 0 : answer.x - speed;
+                uint32_t right_x = std::min(answer.x + speed, test_data.width);
+
+                uint32_t left_y = answer.y < speed ? 0 : answer.y - speed;
+                uint32_t right_y = std::min(answer.y + speed, test_data.height);
+
+                for (uint32_t to_x = left_x; to_x <= right_x; to_x++) {
+                    for (uint32_t to_y = left_y; to_y <= right_y; to_y++) {
+                        // не можем допрыгнуть туда
+                        if (get_dist(answer.x, answer.y, to_x, to_y) > speed * speed) {
+                            continue;
+                        }
+
+                        if (get_dist(to_x, to_y, monster.x, monster.y) < get_dist(best_to_x, best_to_y, monster.x, monster.y)) {
+                            best_to_x = to_x;
+                            best_to_y = to_y;
+                        }
+                    }
+                }
+                return {best_to_x, best_to_y};
+            };
+
+            auto [to_x, to_y] = get_move_to();
+            answer.actions.push_back({Action::Action_t::MOVE, to_x, to_y, 0});
+            answer.x = to_x;
+            answer.y = to_y;
+        }
+
+        uint32_t total_damage = 0;
+
+        // побьем монстра
+        while (answer.actions.size() < test_data.num_turns && total_damage < monster.hp) {
+            ASSERT(get_dist(answer.x, answer.y, monster.x, monster.y) <= range * range, "failed to attack");
+
+            answer.actions.push_back({Action::Action_t::ATTACK, 0, 0, monster_id});
+            total_damage += power;
+        }
+
+        // убили монстра
+        if (total_damage >= monster.hp) {
+            answer.exp += monster.exp;
+            answer.gold += (monster.gold * 1000) / (1000 + answer.fatigue);
+
+            // обновим уровень
+            while (true) {
+                uint32_t new_lvl_exp_need = 1000 + answer.level * (answer.level + 1) * 50;
+                if (answer.exp >= new_lvl_exp_need) {
+                    answer.exp -= new_lvl_exp_need;
+                    answer.level++;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
+    return answer;
+}
+
+bool Solver::try_swap(Randomizer &rnd) {
+    uint32_t a = rnd.get(0, monsters_order.size() - 1);
+    uint32_t b = rnd.get(0, monsters_order.size() - 1);
+
+    if (a == b) {
+        return false;
+    }
+
+    std::swap(monsters_order[a], monsters_order[b]);
+
+    Answer new_answer = simulate(monsters_order, test_data);
+
+    if (new_answer.gold >= answer.gold) {
+        answer = std::move(new_answer);
+        std::cout << "->" << answer.gold;
+        return true;
+    } else {
+        std::swap(monsters_order[a], monsters_order[b]);
+        return false;
+    }
+}
+
+Solver::Solver(TestData copy_test_data) : test_data(std::move(copy_test_data)) {
+    ASSERT(!test_data.monsters.empty(), "monsters is empty");
+
+    monsters_order.resize(test_data.monsters.size());
+    std::iota(monsters_order.begin(), monsters_order.end(), 0);
+    answer = simulate(monsters_order, test_data);
+}
+
+Answer Solver::solve(uint64_t random_seed) {
+    Randomizer rnd(random_seed);
+
+    for (uint32_t step = 0; step < 100'000; step++) {
+        try_swap(rnd);
+    }
+    return answer;
+}
