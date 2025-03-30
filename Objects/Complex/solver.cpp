@@ -12,6 +12,7 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, const TestData &tes
     Answer answer;
     answer.x = test_data.start_x;
     answer.y = test_data.start_y;
+    answer.monsters_order = monsters_order;
 
     for (uint32_t monster_it = 0; monster_it < monsters_order.size(); monster_it++) {
         uint32_t monster_id = monsters_order[monster_it];
@@ -67,10 +68,10 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, const TestData &tes
                 double len = std::sqrt(dx * dx + dy * dy);
                 dx /= len;
                 dy /= len;
-                px = answer.x + dx * speed;
-                py = answer.y + dy * speed;
+                px = answer.x + dx * std::min(speed * 1.0, len);
+                py = answer.y + dy * std::min(speed * 1.0, len);
 
-                uint32_t K = 1;
+                uint32_t K = 2;
 
                 uint32_t left_x = px < K ? 0 : px - K;
                 uint32_t right_x = std::min(px + K, test_data.width);
@@ -85,26 +86,6 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, const TestData &tes
                             continue;
                         }
 
-                        // при прыжке в to мы сможем ударить монстра
-                        /*if (get_dist(to_x, to_y, monster.x, monster.y) <= range * range) {
-
-                            // тогда хотелось бы прыгнуть поближе к следующему монстру
-                            if (monster_it + 1 < monsters_order.size()) {
-                                const auto &next_monster = test_data.monsters[monsters_order[monster_it + 1]];
-
-                                if ((best_to_x == answer.x && best_to_y == answer.y) || get_dist(to_x, to_y, next_monster.x, next_monster.y) < get_dist(best_to_x, best_to_y, next_monster.x, next_monster.y)) {
-                                    best_to_x = to_x;
-                                    best_to_y = to_y;
-                                }
-                            }
-                            else{
-                                // следующего монстра нет
-                                if ((best_to_x == answer.x && best_to_y == answer.y) || get_dist(to_x, to_y, monster.x, monster.y) < get_dist(best_to_x, best_to_y, monster.x, monster.y)) {
-                                    best_to_x = to_x;
-                                    best_to_y = to_y;
-                                }
-                            }
-                        } else*/
                         if (get_dist(to_x, to_y, monster.x, monster.y) < get_dist(best_to_x, best_to_y, monster.x, monster.y)) {
                             best_to_x = to_x;
                             best_to_y = to_y;
@@ -214,23 +195,37 @@ bool Solver::try_reverse(Randomizer &rnd) {
     }
 }
 
-Solver::Solver(TestData copy_test_data, uint64_t random_seed) : test_data(std::move(copy_test_data)) {
+Solver::Solver(std::vector<uint32_t> copy_monsters_order, TestData copy_test_data) : monsters_order(std::move(copy_monsters_order)), test_data(std::move(copy_test_data)) {
     ASSERT(!test_data.monsters.empty(), "monsters is empty");
-
-    Randomizer rnd(random_seed);
-    monsters_order.resize(test_data.monsters.size());
-    std::iota(monsters_order.begin(), monsters_order.end(), 0);
-    std::shuffle(monsters_order.begin(), monsters_order.end(), rnd.generator);
     answer = simulate(monsters_order, test_data);
 }
 
 Answer Solver::solve(uint64_t random_seed) {
     Randomizer rnd(random_seed);
 
+    // случайно пореверсим порядок монстров
+    {
+        uint32_t k = rnd.get(0, 10);
+        for (uint32_t i = 0; i < k; i++) {
+            uint32_t l = rnd.get(0, monsters_order.size() - 1);
+            uint32_t r = rnd.get(0, monsters_order.size() - 1);
+
+            if (l > r) {
+                std::swap(l, r);
+            }
+
+            std::reverse(monsters_order.begin() + l, monsters_order.begin() + r);
+        }
+        answer = simulate(monsters_order, test_data);
+    }
+
     ETimer timer;
 
     // gold: 197819, score: 237690, step: 1000000, time: 26.2046s, temp: 1.0025e-05
-    for (uint32_t step = 0; step <= 1'000'000; step++) {
+    for (uint32_t step = 0;; step++) {
+        if (step % 1'000 == 0 && timer.get_ms() > 10'000) {
+            break;
+        }
         bool verdict = false;
         if (rnd.get_d() < 0.5) {
             verdict = try_swap(rnd);
@@ -246,9 +241,9 @@ Answer Solver::solve(uint64_t random_seed) {
             temp = std::min(temp, 0.001);
         }
 
-        if (step % 1'000 == 0) {
-            std::cout << "gold: " << answer.gold << ", score: " << answer.score << ", step: " << step << ", time: " << timer << ", temp: " << temp << '\n';
-        }
+        //if (step % 1'000 == 0) {
+        // std::cout << "gold: " << answer.gold << ", score: " << answer.score << ", step: " << step << ", time: " << timer << ", temp: " << temp << '\n';
+        //}
     }
     return answer;
 }

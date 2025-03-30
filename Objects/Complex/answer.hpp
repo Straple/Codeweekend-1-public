@@ -16,8 +16,6 @@ struct Action {
     uint32_t attack_id;
 };
 
-bool operator==(const Action &lhs, const Action &rhs);
-
 struct Answer {
     // информация о герое
     uint32_t x = 0;
@@ -30,6 +28,8 @@ struct Answer {
     double score = 0;
 
     std::vector<Action> actions;
+
+    std::vector<uint32_t> monsters_order;
 };
 
 std::ostream &operator<<(std::ostream &output, const Answer &answer);

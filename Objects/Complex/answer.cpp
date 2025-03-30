@@ -5,13 +5,6 @@
 
 using json = nlohmann::json;
 
-bool operator==(const Action &lhs, const Action &rhs) {
-    return lhs.type == rhs.type &&
-           lhs.x == rhs.x &&
-           lhs.y == rhs.y &&
-           lhs.attack_id == rhs.attack_id;
-}
-
 std::ostream &operator<<(std::ostream &output, const Answer &answer) {
     json json;
 
@@ -21,6 +14,7 @@ std::ostream &operator<<(std::ostream &output, const Answer &answer) {
     json["gold"] = answer.gold;
     json["level"] = answer.level;
     json["fatigue"] = answer.fatigue;
+    json["monsters_order"] = answer.monsters_order;
 
     for (auto action: answer.actions) {
         if (action.type == Action::Action_t::ATTACK) {
@@ -36,64 +30,37 @@ std::ostream &operator<<(std::ostream &output, const Answer &answer) {
             });
         }
     }
-    output << json;
-    /*output << "{\n";
-    output << "\t\"moves\": [\n";
-    for (int i = 0; i < answer.actions.size(); i++) {
-        auto &action = answer.actions[i];
-        output << "\t\t{\n";
-        output << "\t\t\t\"type\": \"" << (action.type == Action::Action_t::MOVE ? "move" : "attack") << "\",\n";
-        if (action.type == Action::Action_t::MOVE) {
-            output << "\t\t\t\"target_x\": " << action.x << ",\n";
-            output << "\t\t\t\"target_y\": " << action.y << "\n";
-        } else {
-            output << "\t\t\t\"target_id\": " << action.attack_id << "\n";
-        }
-        output << "\t\t}";
-        if (i + 1 < answer.actions.size()) {
-            output << ",";
-        }
-        output << "\n";
-    }
-    output << "\t]\n";
-    output << "}\n";*/
+    output << std::setfill('\t') << std::setw(1) << json;
     return output;
 }
 
 std::istream &operator>>(std::istream &input, Answer &answer) {
     ASSERT(input, "unable to read");
-    FAILED_ASSERT("TODO");
-    //answer.score = readInt(input);
 
-    /*while (true) {
-        Action action;
-        std::string s;
-        bool ok = false;
-        while (input >> s) {
-            if (s == "\"move\",") {
-                ok = true;
-                action.type = Action::Action_t::MOVE;
-                break;
-            } else if (s == "\"attack\",") {
-                ok = true;
-                action.type = Action::Action_t::ATTACK;
-                break;
+    try {
+        json json = json::parse(input);
+
+        answer.x = json["x"];
+        answer.y = json["y"];
+        answer.exp = json["exp"];
+        answer.gold = json["gold"];
+        answer.level = json["level"];
+        answer.fatigue = json["fatigue"];
+        answer.monsters_order = std::vector<uint32_t>(json["monsters_order"]);
+
+        for (auto &action: json["moves"]) {
+            if (action["type"] == "attack") {
+                answer.actions.push_back({Action::Action_t::ATTACK, 0, 0, action["target_id"]});
+            } else if (action["type"] == "move") {
+                answer.actions.push_back({Action::Action_t::MOVE, action["target_x"], action["target_y"], 0});
+            } else {
+                FAILED_ASSERT("invalid action type");
             }
         }
 
-        if (!ok) {
-            break;
-        }
-
-        if (action.type == Action::Action_t::MOVE) {
-            //action.x = readInt(input);
-            //action.y = readInt(input);
-        } else {
-            //action.target_id = readInt(input);
-        }
-
-        answer.actions.push_back(action);
-    }*/
+    } catch (const json::parse_error &error) {
+        FAILED_ASSERT("TestData read failed, message: >" + std::string(error.what()) + "<");
+    }
 
     return input;
 }
