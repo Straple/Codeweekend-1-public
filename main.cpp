@@ -100,9 +100,9 @@ void run_solver() {
 }
 
 int main() {
-    //run_solver();
+    run_solver();
 
-    uint32_t test = 20;
+    /*uint32_t test = 17;
     TestData test_data;
     std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
     input >> test_data;
@@ -110,5 +110,5 @@ int main() {
     Solver solver(test_data);
     Answer answer = solver.solve(303);
     std::ofstream output("Solutions/test_" + std::to_string(test) + ".json");
-    output << answer;
+    output << answer;*/
 }

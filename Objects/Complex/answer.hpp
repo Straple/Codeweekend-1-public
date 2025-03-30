@@ -29,6 +29,8 @@ struct Answer {
 
     std::vector<Action> actions;
 
+    uint32_t last_monster_i = 0;
+
     std::vector<uint32_t> monsters_order;
 };
 
