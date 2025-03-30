@@ -3,14 +3,19 @@
 #include <Objects/Basic/assert.hpp>
 #include <Objects/Basic/time.hpp>
 
+bool compare(double old_score, double cur_score, double temp, Randomizer &rnd) {
+    return cur_score >= old_score || rnd.get_d() < std::exp(-((old_score - cur_score) / old_score) / temp);
+}
+
 Answer simulate(const std::vector<uint32_t> &monsters_order, const TestData &test_data) {
 
     Answer answer;
     answer.x = test_data.start_x;
     answer.y = test_data.start_y;
 
-    for (uint32_t monster_id: monsters_order) {
-        auto &monster = test_data.monsters[monster_id];
+    for (uint32_t monster_it = 0; monster_it < monsters_order.size(); monster_it++) {
+        uint32_t monster_id = monsters_order[monster_it];
+        const auto &monster = test_data.monsters[monster_id];
 
         uint32_t speed = (test_data.hero.base_speed * (100 + answer.level * test_data.hero.level_speed_coeff)) / 100;
         uint32_t power = (test_data.hero.base_power * (100 + answer.level * test_data.hero.level_power_coeff)) / 100;
@@ -65,7 +70,7 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, const TestData &tes
                 px = answer.x + dx * speed;
                 py = answer.y + dy * speed;
 
-                uint32_t K = 2;
+                uint32_t K = 1;
 
                 uint32_t left_x = px < K ? 0 : px - K;
                 uint32_t right_x = std::min(px + K, test_data.width);
@@ -80,6 +85,26 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, const TestData &tes
                             continue;
                         }
 
+                        // при прыжке в to мы сможем ударить монстра
+                        /*if (get_dist(to_x, to_y, monster.x, monster.y) <= range * range) {
+
+                            // тогда хотелось бы прыгнуть поближе к следующему монстру
+                            if (monster_it + 1 < monsters_order.size()) {
+                                const auto &next_monster = test_data.monsters[monsters_order[monster_it + 1]];
+
+                                if ((best_to_x == answer.x && best_to_y == answer.y) || get_dist(to_x, to_y, next_monster.x, next_monster.y) < get_dist(best_to_x, best_to_y, next_monster.x, next_monster.y)) {
+                                    best_to_x = to_x;
+                                    best_to_y = to_y;
+                                }
+                            }
+                            else{
+                                // следующего монстра нет
+                                if ((best_to_x == answer.x && best_to_y == answer.y) || get_dist(to_x, to_y, monster.x, monster.y) < get_dist(best_to_x, best_to_y, monster.x, monster.y)) {
+                                    best_to_x = to_x;
+                                    best_to_y = to_y;
+                                }
+                            }
+                        } else*/
                         if (get_dist(to_x, to_y, monster.x, monster.y) < get_dist(best_to_x, best_to_y, monster.x, monster.y)) {
                             best_to_x = to_x;
                             best_to_y = to_y;
@@ -119,8 +144,11 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, const TestData &tes
 
         // убили монстра
         if (total_damage >= monster.hp) {
+            uint32_t add_gold = (monster.gold * 1000) / (1000 + answer.fatigue);
             answer.exp += monster.exp;
-            answer.gold += (monster.gold * 1000) / (1000 + answer.fatigue);
+            answer.gold += add_gold;
+
+            answer.score += monster.exp * 10 / std::sqrt(answer.actions.size());
 
             // обновим уровень
             while (true) {
@@ -128,12 +156,15 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, const TestData &tes
                 if (answer.exp >= new_lvl_exp_need) {
                     answer.exp -= new_lvl_exp_need;
                     answer.level++;
+                    answer.score += answer.level * 100.0 / std::sqrt(answer.actions.size());
                 } else {
                     break;
                 }
             }
         }
     }
+
+    answer.score += answer.gold;
 
     return answer;
 }
@@ -150,7 +181,7 @@ bool Solver::try_swap(Randomizer &rnd) {
 
     Answer new_answer = simulate(monsters_order, test_data);
 
-    if (new_answer.gold >= answer.gold || rnd.get_d() < exp((static_cast<int64_t>(new_answer.gold) - static_cast<int64_t>(answer.gold)) / temp)) {
+    if (compare(answer.score, new_answer.score, temp, rnd)) {
         answer = std::move(new_answer);
         return true;
     } else {
@@ -174,7 +205,7 @@ bool Solver::try_reverse(Randomizer &rnd) {
 
     Answer new_answer = simulate(monsters_order, test_data);
 
-    if (new_answer.gold >= answer.gold || rnd.get_d() < exp((static_cast<int64_t>(new_answer.gold) - static_cast<int64_t>(answer.gold)) / temp)) {
+    if (compare(answer.score, new_answer.score, temp, rnd)) {
         answer = std::move(new_answer);
         return true;
     } else {
@@ -198,8 +229,8 @@ Answer Solver::solve(uint64_t random_seed) {
 
     ETimer timer;
 
-    // improve: 189606, step: 999997, time: 63.4635s
-    for (uint32_t step = 0; step < 1'000'000; step++) {
+    // gold: 197819, score: 237690, step: 1000000, time: 26.2046s, temp: 1.0025e-05
+    for (uint32_t step = 0; step <= 1'000'000; step++) {
         bool verdict = false;
         if (rnd.get_d() < 0.5) {
             verdict = try_swap(rnd);
@@ -208,9 +239,16 @@ Answer Solver::solve(uint64_t random_seed) {
         }
 
         if (verdict) {
-            std::cout << "improve: " << answer.gold << ", step: " << step << ", time: " << timer << std::endl;
+            temp *= 0.999;
+            temp = std::max(temp, 0.00001);
+        } else {
+            temp *= 1.0005;
+            temp = std::min(temp, 0.001);
         }
-        temp *= 0.999;
+
+        if (step % 1'000 == 0) {
+            std::cout << "gold: " << answer.gold << ", score: " << answer.score << ", step: " << step << ", time: " << timer << ", temp: " << temp << '\n';
+        }
     }
     return answer;
 }
