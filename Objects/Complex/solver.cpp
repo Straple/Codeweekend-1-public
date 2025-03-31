@@ -228,20 +228,25 @@ bool Solver::try_insert_smart(Randomizer &rnd) {
         Answer incomplete_answer = simulate(new_answer.monsters_order, test_data);
         test_data.num_turns = old_num_turns;
 
-        // найдем самого близкого монстра
-        uint32_t best_m = new_answer.monsters_order[incomplete_answer.last_monster_i];
-        for (uint32_t i = incomplete_answer.last_monster_i; i < new_answer.monsters_order.size(); i++) {
-            auto &best_monster = test_data.monsters[best_m];
-            auto &monster = test_data.monsters[new_answer.monsters_order[i]];
+        for (uint32_t K = rnd.get(1, 10); K > 0 && incomplete_answer.last_monster_i < new_answer.monsters_order.size(); K--) {
 
-            if (get_dist(incomplete_answer.x, incomplete_answer.y, best_monster.x, best_monster.y) >
-                get_dist(incomplete_answer.x, incomplete_answer.y, monster.x, monster.y)) {
+            // найдем самого близкого монстра
+            uint32_t best_m = new_answer.monsters_order[incomplete_answer.last_monster_i];
+            for (uint32_t i = incomplete_answer.last_monster_i; i < new_answer.monsters_order.size(); i++) {
+                auto &best_monster = test_data.monsters[best_m];
+                auto &monster = test_data.monsters[new_answer.monsters_order[i]];
 
-                best_m = new_answer.monsters_order[i];
+                if (get_dist(incomplete_answer.x, incomplete_answer.y, best_monster.x, best_monster.y) >
+                    get_dist(incomplete_answer.x, incomplete_answer.y, monster.x, monster.y)) {
+
+                    best_m = new_answer.monsters_order[i];
+                }
             }
+            new_answer.monsters_order.erase(std::find(new_answer.monsters_order.begin(), new_answer.monsters_order.end(), best_m));
+            new_answer.monsters_order.insert(new_answer.monsters_order.begin() + incomplete_answer.last_monster_i, best_m);
+
+            incomplete_answer.last_monster_i++;
         }
-        new_answer.monsters_order.erase(std::find(new_answer.monsters_order.begin(), new_answer.monsters_order.end(), best_m));
-        new_answer.monsters_order.insert(new_answer.monsters_order.begin() + incomplete_answer.last_monster_i, best_m);
     }
 
     new_answer = simulate(new_answer.monsters_order, test_data);
@@ -294,6 +299,8 @@ bool Solver::try_reverse(Randomizer &rnd) {
     if (l == r) {
         return false;
     }
+
+    ASSERT(0 <= l && l < r && r < new_answer.monsters_order.size(), "invalid segment");
 
     std::reverse(new_answer.monsters_order.begin() + l, new_answer.monsters_order.begin() + r);
 
@@ -355,14 +362,31 @@ Answer Solver::solve(uint64_t random_seed) {
     // gold: 345000, score: 361502, step: 1000000, time: 65.1844s, temp: 2.88849e-05
     // gold: 353001, score: 370223, step: 1000000, time: 69.0404s, temp: 0.000343505
     // gold: 431013, score: 451379, step: 2000000, time: 70.4348s, temp: 1.36999e-90
+    // gold: 557049, score: 557049, step: 2000000, time: 62.5673s, temp: 1.36999e-90
+    // gold: 637011, score: 637011, step: 2000000, time: 58.5722s, temp: 2.19746e-05
+    // gold: 702002, score: 702002, step: 2000000, time: 86.2481s, temp: 2.00938e-05
     for (uint32_t step = 0; step <= 2'000'000; step++) {
-        if (step % 1'000 == 0 && timer.get_ms() > 10'000) {
-            break;
-        }
-        // double old_score = answer.score;
+        //if (step % 1'000 == 0 && timer.get_ms() > 10'000) {
+        //    break;
+        //}
+
+        double old_score = answer.score;
 
         double p = rnd.get_d();
-        if (p < 0.2) {
+        // try_swap(rnd); // 319002
+        // try_insert(rnd); // 393031
+        // try_insert_smart(rnd); // 428112 -> 518113
+        // try_reverse(rnd);// 263057
+
+        if (p < 0.5) {
+            try_insert_smart(rnd);
+        } else if (p < 0.8) {
+            try_insert(rnd);
+        } else {
+            try_reverse(rnd);
+        }
+
+        /*if (p < 0.2) {
             try_swap(rnd);
         }
         //else if (p < 0.6) {try_throw(rnd);}
@@ -372,13 +396,19 @@ Answer Solver::solve(uint64_t random_seed) {
             try_insert(rnd);
         } else {
             try_reverse(rnd);
-        }
+        }*/
 
         temp *= 0.9999;
-        /*if (old_score < answer.score) {
+        if (old_score < answer.score) {
             temp = std::min(temp * 0.9999, 0.00001);
         } else {
             temp = std::min(temp * 1.0005, 0.002);
+        }
+
+        /*if (old_score < answer.score) {
+            temp = std::max(temp * 0.99, 0.000001);
+        } else {
+            temp = std::min(temp * 1.00001, 0.002);
         }*/
 
         if (step % 1'000 == 0) {
