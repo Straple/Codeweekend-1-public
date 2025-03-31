@@ -330,24 +330,6 @@ Solver::Solver(TestData copy_test_data) : test_data(std::move(copy_test_data)) {
 Answer Solver::solve(uint64_t random_seed) {
     Randomizer rnd(random_seed);
 
-    // случайно пореверсим порядок монстров
-    if (rnd.get_d() < 0.3) {
-        uint32_t k = rnd.get(1, 5);
-        for (uint32_t i = 0; i < k; i++) {
-            uint32_t l = rnd.get(0, answer.monsters_order.size() - 1);
-            uint32_t r = rnd.get(0, answer.monsters_order.size() - 1);
-
-            if (l > r) {
-                std::swap(l, r);
-            }
-
-            std::reverse(answer.monsters_order.begin() + l, answer.monsters_order.begin() + r);
-        }
-        answer = simulate(answer.monsters_order, test_data);
-    } else if (rnd.get_d() < 0.3) {
-        std::shuffle(answer.monsters_order.begin(), answer.monsters_order.end(), rnd.generator);
-    }
-
     ETimer timer;
 
     // test: 3
@@ -365,10 +347,10 @@ Answer Solver::solve(uint64_t random_seed) {
     // gold: 557049, score: 557049, step: 2000000, time: 62.5673s, temp: 1.36999e-90
     // gold: 637011, score: 637011, step: 2000000, time: 58.5722s, temp: 2.19746e-05
     // gold: 702002, score: 702002, step: 2000000, time: 86.2481s, temp: 2.00938e-05
-    for (uint32_t step = 0; step <= 2'000'000; step++) {
-        //if (step % 1'000 == 0 && timer.get_ms() > 10'000) {
-        //    break;
-        //}
+    for (uint32_t step = 0; /*step <= 2'000'000*/; step++) {
+        if (step % 1'000 == 0 && timer.get_ms() > 60'000) {
+            break;
+        }
 
         double old_score = answer.score;
 
