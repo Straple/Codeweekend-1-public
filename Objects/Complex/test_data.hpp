@@ -1,8 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <iostream>
 #include <vector>
-#include <cstdint>
 
 struct Hero {
     uint32_t base_speed = 0;
@@ -34,6 +34,11 @@ struct TestData {
     Hero hero;
 
     std::vector<Monster> monsters;
+
+    // monsters_attack[y * (width + 1) + x] = { monsters which attack this cell (x, y) }
+    std::vector<std::vector<uint32_t>> monsters_attack;
+
+    void build();
 };
 
 std::istream &operator>>(std::istream &input, TestData &data);

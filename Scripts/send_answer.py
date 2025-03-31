@@ -94,16 +94,18 @@ def update_display_name(new_name):
 # update_display_name('Test 123')
 
 def mysubmit(test_id):
-    filename = "../Solutions/test_" + str(test_id) + ".json"
-    f = open(filename, "r")
-    file_contents = f.read()
-    s = submit(test_id, file_contents)
-    if s is None:
-        print("failed to submit:", test_id)
-
+    try:
+        filename = "../Solutions/test_" + str(test_id) + ".json"
+        f = open(filename, "r")
+        file_contents = f.read()
+        s = submit(test_id, file_contents)
+        if s is None:
+            print("failed to submit:", test_id)
+    except:
+        print("failed to read:", test_id)
 
 def submit_all():
-    for i in range(25):
+    for i in range(50):
         mysubmit(i + 1)
 
 

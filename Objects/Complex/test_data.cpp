@@ -5,6 +5,24 @@
 
 using json = nlohmann::json;
 
+void TestData::build() {
+    monsters_attack.assign((height + 1) * (width + 1), {});
+    for (uint32_t y = 0; y <= height; y++) {
+        for (uint32_t x = 0; x <= width; x++) {
+            for (uint32_t m = 0; m < monsters.size(); m++) {
+                const auto &monster = monsters[m];
+
+                if (monster.attack == 0 ||
+                    get_dist(x, y, monster.x, monster.y) > monster.range * monster.range) {
+                    continue;
+                }
+
+                monsters_attack[y * (width + 1) + x].push_back(m);
+            }
+        }
+    }
+}
+
 std::istream &operator>>(std::istream &input, TestData &data) {
     ASSERT(input, "unable to read");
 
@@ -41,6 +59,8 @@ std::istream &operator>>(std::istream &input, TestData &data) {
     } catch (const json::parse_error &error) {
         FAILED_ASSERT("TestData read failed, message: >" + std::string(error.what()) + "<");
     }
+
+    data.build();
 
     return input;
 }
