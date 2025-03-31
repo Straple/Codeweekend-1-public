@@ -41,8 +41,6 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, const TestData &tes
         // дойдем до монстра
         while (answer.actions.size() < test_data.num_turns && get_dist(answer.x, answer.y, monster.x, monster.y) > range * range) {
             auto get_move_to_triv = [&]() -> std::pair<uint32_t, uint32_t> {
-                // TODO: оптимизировать
-
                 uint32_t best_to_x = answer.x;
                 uint32_t best_to_y = answer.y;
 
@@ -84,7 +82,7 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, const TestData &tes
                 px = answer.x + dx * len;
                 py = answer.y + dy * len;
 
-                constexpr uint32_t K = 1;
+                constexpr uint32_t K = 2;
 
                 uint32_t left_x = px < K ? 0 : px - K;
                 uint32_t right_x = std::min(px + K, test_data.width);
@@ -99,9 +97,29 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, const TestData &tes
                             continue;
                         }
 
-                        if (get_dist(to_x, to_y, monster.x, monster.y) < get_dist(best_to_x, best_to_y, monster.x, monster.y)) {
-                            best_to_x = to_x;
-                            best_to_y = to_y;
+                        // из этой точки мы можем ударить монстра
+                        if (get_dist(to_x, to_y, monster.x, monster.y) <= range * range) {
+
+                            // из best_to мы тоже можем ударить монстра
+                            if (get_dist(best_to_x, best_to_y, monster.x, monster.y) <= range * range) {
+
+                                // хотим быть ближе к некст монстру
+                                const auto &next_monster = test_data.monsters[monsters_order[monster_it + 1]];
+                                if (get_dist(to_x, to_y, next_monster.x, next_monster.y) < get_dist(best_to_x, best_to_y, next_monster.x, next_monster.y)) {
+                                    best_to_x = to_x;
+                                    best_to_y = to_y;
+                                }
+
+                            } else {
+                                best_to_x = to_x;
+                                best_to_y = to_y;
+                            }
+
+                        } else {
+                            if (get_dist(to_x, to_y, monster.x, monster.y) < get_dist(best_to_x, best_to_y, monster.x, monster.y)) {
+                                best_to_x = to_x;
+                                best_to_y = to_y;
+                            }
                         }
                     }
                 }
@@ -332,6 +350,8 @@ Answer Solver::solve(uint64_t random_seed) {
 
     ETimer timer;
 
+    Answer best_answer = answer;
+
     // test: 3
     // gold: 197819, score: 237690, step: 1000000, time: 26.2046s, temp: 1.0025e-05
     // ========================================================================================
@@ -340,14 +360,19 @@ Answer Solver::solve(uint64_t random_seed) {
     // gold: 327000, score: 343848, step: 1000000, time: 61.2345s, temp: 1.21647e-05
     // gold: 378000, score: 395827, step: 1000000, time: 70.1689s, temp: 2.67983e-05
     // gold: 386001, score: 404707, step: 1000000, time: 63.5259s, temp: 1.38461e-05
-    // best gold: 421001
     // gold: 345000, score: 361502, step: 1000000, time: 65.1844s, temp: 2.88849e-05
     // gold: 353001, score: 370223, step: 1000000, time: 69.0404s, temp: 0.000343505
     // gold: 431013, score: 451379, step: 2000000, time: 70.4348s, temp: 1.36999e-90
     // gold: 557049, score: 557049, step: 2000000, time: 62.5673s, temp: 1.36999e-90
     // gold: 637011, score: 637011, step: 2000000, time: 58.5722s, temp: 2.19746e-05
     // gold: 702002, score: 702002, step: 2000000, time: 86.2481s, temp: 2.00938e-05
-    for (uint32_t step = 0; /*step <= 2'000'000*/; step++) {
+    // ========================================================================================
+    // test: 25
+    // gold: 16548, score: 16548, step: 2000000, time: 15.1092s, temp: 2.62239e-05
+    // gold: 16786, score: 16786, step: 2000000, time: 14.5175s, temp: 2.62239e-05
+    uint32_t step = 0;
+    for (; //step <= 2'000'000
+         ; step++) {
         if (step % 1'000 == 0 && timer.get_ms() > 60'000) {
             break;
         }
@@ -380,6 +405,10 @@ Answer Solver::solve(uint64_t random_seed) {
             try_reverse(rnd);
         }*/
 
+        if (answer.score > best_answer.score) {
+            best_answer = answer;
+        }
+
         temp *= 0.9999;
         if (old_score < answer.score) {
             temp = std::min(temp * 0.9999, 0.00001);
@@ -397,5 +426,7 @@ Answer Solver::solve(uint64_t random_seed) {
             //std::cout << "gold: " << answer.gold << ", score: " << answer.score << ", step: " << step << ", time: " << timer << ", temp: " << temp << '\n';
         }
     }
-    return answer;
+    //std::cout << "best:\n";
+    //std::cout << "gold: " << best_answer.gold << ", score: " << best_answer.score << ", step: " << step << ", time: " << timer << ", temp: " << temp << '\n';
+    return best_answer;
 }
