@@ -23,7 +23,7 @@ struct Answer {
     uint32_t exp = 0;
     uint32_t gold = 0;
     uint32_t level = 0;
-    uint32_t fatigue = 0;
+    uint64_t fatigue = 0;
 
     double score = 0;
 

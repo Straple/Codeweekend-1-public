@@ -20,19 +20,23 @@ void run_solver() {
     std::filesystem::create_directories("Solutions");
 
     std::vector<uint32_t> tests = {
-            //1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25
-            26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+            26, 27, 28, 29, 30, 31, 32, 33, 34, 35, /*36, 37,*/ 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50
     };
 
     std::ofstream logger("log.csv");
 
     logger << "message,thr,test,gold,solve time,total time" << std::endl;
 
+    ETimer timer;
     std::vector<TestData> tests_data(51);
     for (uint32_t test = 1; test <= 50; test++) {
+        ETimer timer;
         std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
         input >> tests_data[test];
+        std::cout << "reading tests data(" << test << "): " << timer << std::endl;
     }
+    std::cout << "Total reading tests data: " << timer << std::endl;
 
     std::vector<std::atomic<bool>> is_free(51);
     for (auto &i: is_free) {
@@ -66,7 +70,7 @@ void run_solver() {
             std::string filename = "Solutions/test_" + std::to_string(test) + ".json";
 
             std::vector<uint32_t> monsters_order;
-            if (std::filesystem::exists(filename) && rnd.get_d() < 0.3) {
+            if (std::filesystem::exists(filename) && rnd.get_d() < 0.5) {
                 Answer old_answer;
                 lock(test);
                 std::ifstream input(filename);
@@ -76,8 +80,8 @@ void run_solver() {
                 monsters_order = old_answer.monsters_order;
 
                 // случайно пореверсим порядок монстров
-                if (rnd.get_d() < 0.3) {
-                    uint32_t k = rnd.get(1, 5);
+                if (rnd.get_d() < 0.2) {
+                    uint32_t k = rnd.get(1, 3);
                     for (uint32_t i = 0; i < k; i++) {
                         uint32_t l = rnd.get(0, monsters_order.size() - 1);
                         uint32_t r = rnd.get(0, monsters_order.size() - 1);
@@ -138,7 +142,7 @@ int main() {
     run_solver();
     return 0;
 
-    uint32_t test = 28;
+    uint32_t test = 20;
     TestData test_data;
     std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
     input >> test_data;
@@ -148,3 +152,58 @@ int main() {
     std::ofstream output("test_" + std::to_string(test) + ".json");
     output << answer;
 }
+
+/*
+test relative_score raw_score
+1 1000 700
+2 968 2580
+3 931 228778
+4 932 121023
+5 945 6339591
+6 942 11873862
+7 962 2767091
+8 962 352562
+9 958 462098
+10 942 1761854
+11 927 1613561
+12 976 2977
+13 988 3689
+14 908 722067
+15 928 2195778
+16 979 1106074
+17 863 15830012
+18 909 1037081
+19 836 859005
+20 889 738000
+21 725 510013
+22 905 27003
+23 879 41824
+24 831 18705
+25 865 16839
+26 990 1163
+27 959 3816
+28 773 102093
+29 818 87002
+30 201 2995570
+31 764 7751180
+32 268 100049
+33 640 236260
+34 38 102366
+35 663 1800778
+36 0 0
+37 0 0
+38 727 142663
+39 42 8855
+40 674 78356
+41 800 2940
+42 759 3172
+43 578 4664
+44 611 3960
+45 646 9111
+46 517 12988
+47 672 30403
+48 522 11262
+49 877 16362
+50 573 81542
+total: 37083
+*/

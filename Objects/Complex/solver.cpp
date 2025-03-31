@@ -25,17 +25,14 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_see
     }
     ASSERT(S.size() == monsters_order.size(), "invalid monsters order");*/
 
-    std::vector<uint32_t> monster_p(monsters_order.size());
-    for (uint32_t i = 0; i < monsters_order.size(); i++) {
-        monster_p[monsters_order[i]] = i;
-    }
+    std::vector<bool> is_killed(monsters_order.size());
+
+    uint64_t dist_w = rnd.get(1, 100000);
 
     ASSERT(test_data.monsters.size() == monsters_order.size(), "invalid monsters order");
 
     for (uint32_t monster_it = 0; monster_it < monsters_order.size(); monster_it++) {
         answer.last_monster_i = monster_it;
-
-        answer.score -= answer.fatigue * 5.0 / test_data.num_turns * (1 - answer.actions.size() * 1.0 / test_data.num_turns);
 
         uint32_t monster_id = monsters_order[monster_it];
         const auto &monster = test_data.monsters[monster_id];
@@ -48,13 +45,18 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_see
             break;
         }
 
+        if ((monster.hp + power - 1) / power > 20) {
+            continue;// слишком жирный
+        }
+
+        //answer.score -= answer.fatigue * 5.0 / test_data.num_turns * (1 - answer.actions.size() * 1.0 / test_data.num_turns);
+
         auto update_fatigue = [&](uint32_t cnt) {
             uint32_t pos = answer.y * (test_data.width + 1) + answer.x;
             for (uint32_t m: test_data.monsters_attack[pos]) {
-                if (monster_p[m] < monster_it) {
-                    continue;
+                if (!is_killed[m]) {
+                    answer.fatigue += test_data.monsters[m].attack * cnt;
                 }
-                answer.fatigue += test_data.monsters[m].attack * cnt;
             }
         };
 
@@ -86,7 +88,7 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_see
                 ASSERT(!(best_to_x == answer.x && best_to_y == answer.y), "unable to find to pos");
                 return {best_to_x, best_to_y};
             };
-            auto get_move_to = [&]() -> std::pair<uint32_t, uint32_t> {
+            auto get_move_to_smart = [&]() -> std::pair<uint32_t, uint32_t> {
                 uint32_t best_to_x = answer.x;
                 uint32_t best_to_y = answer.y;
 
@@ -102,7 +104,123 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_see
                 px = answer.x + dx * len;
                 py = answer.y + dy * len;
 
-                constexpr uint32_t K = 4;
+                constexpr uint32_t K = 1;
+
+                uint32_t left_x = px < K ? 0 : px - K;
+                uint32_t right_x = std::min(px + K, test_data.width);
+
+                uint32_t left_y = py < K ? 0 : py - K;
+                uint32_t right_y = std::min(py + K, test_data.height);
+
+                std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> dots;
+
+                for (uint32_t to_y = left_y; to_y <= right_y; to_y++) {
+                    for (uint32_t to_x = left_x; to_x <= right_x; to_x++) {
+                        // не можем допрыгнуть туда
+                        if (get_dist(answer.x, answer.y, to_x, to_y) > speed * speed) {
+                            continue;
+                        }
+
+                        best_to_x = to_x;
+                        best_to_y = to_y;
+                    }
+                }
+
+                ASSERT(!(best_to_x == answer.x && best_to_y == answer.y), "unable to find to pos");
+
+                // взяли неплохую точку
+                // но давайте улучшим ее
+
+                auto get_metric = [&](uint32_t to_x, uint32_t to_y) {
+                    uint64_t fatigue = 0;
+                    {
+                        uint32_t pos = to_y * (test_data.width + 1) + to_x;
+                        for (uint32_t m: test_data.monsters_attack[pos]) {
+                            if (!is_killed[m]) {
+                                fatigue += test_data.monsters[m].attack;
+                            }
+                        }
+                    }
+                    int64_t metric = 0;
+                    if (get_dist(to_x, to_y, monster.x, monster.y) > range * range) {
+                        metric += get_dist(to_x, to_y, monster.x, monster.y) * dist_w;
+                    }
+                    metric += fatigue;
+                    return metric;
+                };
+
+                auto best_metric = get_metric(best_to_x, best_to_y);
+
+                // (metric, to_x, to_y)
+                std::set<std::tuple<int64_t, uint32_t, uint32_t>> S;
+                S.insert({best_metric, best_to_x, best_to_y});
+
+                std::set<std::tuple<uint32_t, uint32_t>> visited;
+                visited.insert({best_to_x, best_to_y});
+
+                for (uint32_t step = 0; !S.empty(); step++) {
+                    auto [metric, to_x, to_y] = *S.begin();
+                    S.erase(S.begin());
+
+                    if (metric < best_metric && !(to_x == answer.x && to_y == answer.y)) {
+                        best_metric = metric;
+                        best_to_x = to_x;
+                        best_to_y = to_y;
+                    }
+
+                    if (step > 30) {
+                        continue;
+                    }
+
+                    auto do_step = [&](int32_t dx, int32_t dy) {
+                        int32_t x = dx + static_cast<int32_t>(to_x);
+                        int32_t y = dy + static_cast<int32_t>(to_y);
+
+                        if (x < 0 || y < 0) {
+                            return;
+                        }
+                        if (test_data.width < x || test_data.height < y) {
+                            return;
+                        }
+                        // не можем допрыгнуть туда
+                        if (get_dist(answer.x, answer.y, x, y) > speed * speed) {
+                            return;
+                        }
+                        if (visited.count({x, y})) {
+                            return;
+                        }
+
+                        visited.insert({x, y});
+                        S.insert({get_metric(x, y), x, y});
+                    };
+
+                    do_step(0, +1);
+                    do_step(0, -1);
+                    do_step(+1, 0);
+                    do_step(-1, 0);
+                }
+                return {best_to_x, best_to_y};
+            };
+
+            auto get_move_to = [&]() -> std::pair<uint32_t, uint32_t> {
+                return get_move_to_smart();
+
+                uint32_t best_to_x = answer.x;
+                uint32_t best_to_y = answer.y;
+
+                uint32_t px = 0;
+                uint32_t py = 0;
+
+                double dx = static_cast<int>(monster.x) - static_cast<int>(answer.x);
+                double dy = static_cast<int>(monster.y) - static_cast<int>(answer.y);
+                double len = std::sqrt(dx * dx + dy * dy);
+                dx /= len;
+                dy /= len;
+                len = std::min(speed * 1.0, len);
+                px = answer.x + dx * len;
+                py = answer.y + dy * len;
+
+                constexpr uint32_t K = 3;
 
                 uint32_t left_x = px < K ? 0 : px - K;
                 uint32_t right_x = std::min(px + K, test_data.width);
@@ -162,6 +280,9 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_see
             };
 
             auto [to_x, to_y] = get_move_to();
+            ASSERT(get_dist(answer.x, answer.y, to_x, to_y) <= speed * speed, "too far to move");
+            ASSERT(!(to_x == answer.x && to_y == answer.y), "invalid to");
+
             answer.actions.push_back({Action::Action_t::MOVE, to_x, to_y, 0});
             answer.x = to_x;
             answer.y = to_y;
@@ -182,6 +303,8 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_see
 
         // убили монстра
         if (total_damage >= monster.hp) {
+            is_killed[monster_id] = true;
+
             if (get_dist(answer.x, answer.y, monster.x, monster.y) <= monster.range * monster.range) {
                 answer.fatigue -= monster.attack;
             }
@@ -431,7 +554,7 @@ Answer Solver::solve(uint64_t random_seed) {
     for (;
          //step <= 2'000'000
          ; step++) {
-        if (step % 1'000 == 0 && timer.get_ms() > 60'000) {
+        if (step % 10 == 0 && timer.get_ms() > 120'000) {
             break;
         }
 
