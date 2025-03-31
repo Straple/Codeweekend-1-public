@@ -1,4 +1,4 @@
-api_token = 'nconafihztsullnskpbajnufsrrtkruw'
+api_token = 'zdxfzilnjfxsowbipaidznoarykntmdi'
 api_url = 'https://codeweekend.dev:3723/api/'
 files_url = 'https://codeweekend.dev:81/'
 
@@ -12,19 +12,24 @@ headers = {
     'authorization': f'Bearer {api_token}'
 }
 
+
 def show(inner_json):
     print(json.dumps(inner_json, indent=2))
+
 
 def get_scoreboard():
     return requests.get(api_url + 'scoreboard', headers=headers).json()
 
+
 def get_team_dashboard():
     return requests.get(api_url + 'team_dashboard', headers=headers).json()
+
 
 def get_test(task_id):
     task_id_padded = '{:03d}'.format(task_id)
     url = f'{files_url}{task_id_padded}.json'
     return requests.get(url, headers=headers).content
+
 
 # Returns at most 50 submissions
 def get_team_submissions(offset=0, task_id=None):
@@ -32,6 +37,7 @@ def get_team_submissions(offset=0, task_id=None):
     if task_id is not None:
         url += f'&task_id={task_id}'
     return requests.get(url, headers=headers).json()
+
 
 def get_submission_info(submission_id, wait=False):
     url = f'{api_url}submission_info/{submission_id}'
@@ -42,14 +48,16 @@ def get_submission_info(submission_id, wait=False):
         return get_submission_info(submission_id)
     return res
 
+
 # Returns submission_id
 def submit(task_id, solution):
-    res = requests.post(url = f'{api_url}submit/{task_id}',
+    res = requests.post(url=f'{api_url}submit/{task_id}',
                         headers=headers, files={'file': solution})
     if res.status_code == 200:
         return res.text
     print(f'Error: {res.text}')
     return None
+
 
 def download_submission(submission_id):
     import urllib.request
@@ -66,6 +74,7 @@ def download_submission(submission_id):
     os.remove(file)
     return content
 
+
 def update_display_name(new_name):
     url = api_url + 'update_user'
     data = {
@@ -75,13 +84,42 @@ def update_display_name(new_name):
     }
     return requests.post(url, json=data, headers=headers).content
 
+
 # show(get_scoreboard())
 # show(get_submission_info(427))
 # show(get_team_dashboard())
 # show(get_team_submissions())
 # download_submission(476)
 # get_test(1)
-#update_display_name('Test 123')
+# update_display_name('Test 123')
+
+def mysubmit(test_id):
+    filename = "../Solutions/test_" + str(test_id) + ".json"
+    f = open(filename, "r")
+    file_contents = f.read()
+    s = submit(test_id, file_contents)
+    if s is None:
+        print("failed to submit:", test_id)
+
+
+def submit_all():
+    for i in range(25):
+        mysubmit(i + 1)
+
+
+submit_all()
+
+scoreboard = get_scoreboard()
+
+total_relative_score = 0
+for team in scoreboard["teams"]:
+    if team["team_members"] == "Egor Yukhnevich":
+        tasks = team["tasks"]
+        for task in tasks:
+            print(task["task_id"], int(task["relative_score"]), int(task["raw_score"]))
+            total_relative_score += task["relative_score"]
+
+print("total:", int(total_relative_score))
 
 # Submission example
 '''def example():
@@ -91,12 +129,3 @@ def update_display_name(new_name):
     print(f'Result: {info}')
 
 example()'''
-
-test_id = sys.argv[1]
-filename = "Tests/test_" + sys.argv[1] + "_answer"
-f = open(filename, "r")
-f.readline() # trim "score": X
-file_contents = f.read()
-s = submit(test_id, file_contents)
-if s != None:
-    print(s)
