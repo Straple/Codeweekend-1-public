@@ -17,11 +17,12 @@
 
 void run_solver() {
 
-    std::filesystem::create_directories("Solutions");
+    std::filesystem::create_directories("Solutions2");
 
     std::vector<uint32_t> tests = {
+
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
-            26, 27, 28, 29, 30, 31, 32, 33, 34, 35, /*36, 37,*/ 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50
+            //26, 27, 28, 29, 30, 31, 32, 33, 34, 35, /*36, 37,*/ 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50
     };
 
     std::ofstream logger("log.csv");
@@ -67,32 +68,33 @@ void run_solver() {
 
             ETimer timer;
 
-            std::string filename = "Solutions/test_" + std::to_string(test) + ".json";
+            std::string filename = "Solutions2/test_" + std::to_string(test) + ".json";
 
             std::vector<uint32_t> monsters_order;
-            if (std::filesystem::exists(filename) && rnd.get_d() < 0.5) {
+            uint32_t old_gold = 0;
+            if (std::filesystem::exists(filename) && rnd.get_d() < 0.2) {
                 Answer old_answer;
                 lock(test);
                 std::ifstream input(filename);
                 input >> old_answer;
                 unlock(test);
+                old_gold = old_answer.gold;
 
                 monsters_order = old_answer.monsters_order;
 
                 // случайно пореверсим порядок монстров
-                if (rnd.get_d() < 0.2) {
-                    uint32_t k = rnd.get(1, 3);
-                    for (uint32_t i = 0; i < k; i++) {
-                        uint32_t l = rnd.get(0, monsters_order.size() - 1);
-                        uint32_t r = rnd.get(0, monsters_order.size() - 1);
+                uint32_t k = rnd.get(0, 5);
+                for (uint32_t i = 0; i < k; i++) {
+                    uint32_t l = rnd.get(0, monsters_order.size() - 1);
+                    uint32_t r = rnd.get(0, monsters_order.size() - 1);
 
-                        if (l > r) {
-                            std::swap(l, r);
-                        }
-
-                        std::reverse(monsters_order.begin() + l, monsters_order.begin() + r);
+                    if (l > r) {
+                        std::swap(l, r);
                     }
+
+                    std::reverse(monsters_order.begin() + l, monsters_order.begin() + r);
                 }
+
             } else {
                 monsters_order.resize(tests_data[test].monsters.size());
                 std::iota(monsters_order.begin(), monsters_order.end(), 0);
@@ -119,10 +121,10 @@ void run_solver() {
                 output << answer;
 
                 std::unique_lock locker(mutex);
-                logger << "improve," << thr << ',' << test << ',' << answer.gold << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
+                logger << "improve " << old_gold << " -> " << answer.gold << "," << thr << ',' << test << ',' << answer.gold << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
             } else {
                 std::unique_lock locker(mutex);
-                logger << "failed," << thr << ',' << test << ',' << answer.gold << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
+                logger << "failed " << old_gold << " -> " << answer.gold << "," << thr << ',' << test << ',' << answer.gold << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
             }
 
             unlock(test);
@@ -138,14 +140,45 @@ void run_solver() {
     }
 }
 
+void print_compare_simulates() {
+    double total_p = 0;
+    for (uint32_t test = 1; test <= 25; test++) {
+        TestData test_data;
+        {
+            std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
+            input >> test_data;
+        }
+
+        Answer answer;
+        {
+            std::ifstream input("Solutions/test_" + std::to_string(test) + ".json");
+            input >> answer;
+        }
+
+        Answer new_answer = simulate(answer.monsters_order, answer.random_seed, test_data);
+
+        double p = ((int) new_answer.gold - (int) answer.gold) * 100.0 / answer.gold;
+        total_p += p;
+        std::cout << test << ": " << answer.gold << " -> " << new_answer.gold << " " << p << "%" << std::endl;
+    }
+    // Total p: -140.589% -> -46.8513%
+    std::cout << "Total p: " << total_p << "%" << std::endl;
+}
+
 int main() {
+
+    //print_compare_simulates();
+    //return 0;
+
     run_solver();
     return 0;
 
     uint32_t test = 20;
     TestData test_data;
-    std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
-    input >> test_data;
+    {
+        std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
+        input >> test_data;
+    }
 
     Solver solver(test_data);
     Answer answer = solver.solve(303);

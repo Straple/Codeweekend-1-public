@@ -12,7 +12,7 @@ class Solver {
 
     Answer answer;
 
-    double temp = 0.001;
+    double temp = 1;
 
     bool try_swap(Randomizer &rnd);
 

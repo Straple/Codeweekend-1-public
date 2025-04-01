@@ -47,7 +47,9 @@ std::istream &operator>>(std::istream &input, Answer &answer) {
         answer.gold = json["gold"];
         answer.level = json["level"];
         answer.fatigue = json["fatigue"];
-        answer.random_seed = json["random_seed"];
+        if(json.contains("random_seed")) {
+            answer.random_seed = json["random_seed"];
+        }
         answer.monsters_order = std::vector<uint32_t>(json["monsters_order"]);
 
         for (auto &action: json["moves"]) {

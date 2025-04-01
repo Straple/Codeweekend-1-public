@@ -7,6 +7,7 @@ using json = nlohmann::json;
 
 void TestData::build() {
     monsters_attack.assign((height + 1) * (width + 1), {});
+    return;
     for (uint32_t y = 0; y <= height; y++) {
         for (uint32_t x = 0; x <= width; x++) {
             for (uint32_t m = 0; m < monsters.size(); m++) {
