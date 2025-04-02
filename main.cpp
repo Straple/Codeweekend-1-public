@@ -15,6 +15,60 @@
 #include <mutex>
 #include <thread>
 
+const std::vector<uint32_t> MAX_RAW_SCORES = {
+        0,
+        700,     // 1
+        2665,    // 2
+        245608,  // 3
+        129770,  // 4
+        6706160, // 5
+        12595524,// 6
+        2874331, // 7
+        366423,  // 8
+        482073,  // 9
+        1869111, // 10
+        1740182, // 11
+        3050,    // 12
+        3732,    // 13
+        794646,  // 14
+        2364185, // 15
+        1129413, // 16
+        18330001,// 17
+        1140206, // 18
+        1027001, // 19
+        830000,  // 20
+        703000,  // 21
+        29824,   // 22
+        47579,   // 23
+        22501,   // 24
+        19447,   // 25
+        1174,    // 26
+        3976,    // 27
+        132001,  // 28
+        106357,  // 29
+        14881104,// 30
+        10134289,// 31
+        372587,  // 32
+        368591,  // 33
+        2679006, // 34
+        2714850, // 35
+        1718213, // 36
+        2709867, // 37
+        196138,  // 38
+        209491,  // 39
+        116093,  // 40
+        3671,    // 41
+        4176,    // 42
+        8065,    // 43
+        6476,    // 44
+        14089,   // 45
+        25116,   // 46
+        45213,   // 47
+        21559,   // 48
+        18647,   // 49
+        142221,  // 50
+};
+
 void run_solver() {
 
     std::filesystem::create_directories("Solutions2");
@@ -72,7 +126,7 @@ void run_solver() {
 
             std::vector<uint32_t> monsters_order;
             uint32_t old_gold = 0;
-            if (std::filesystem::exists(filename) && rnd.get_d() < 0.2) {
+            if (std::filesystem::exists(filename) && rnd.get_d() < 0.8) {
                 Answer old_answer;
                 lock(test);
                 std::ifstream input(filename);
@@ -165,13 +219,39 @@ void print_compare_simulates() {
     std::cout << "Total p: " << total_p << "%" << std::endl;
 }
 
+void print_compare_scores(const std::string &solutions_dir, uint32_t left_test, uint32_t right_test) {
+    double total = 0;
+    for (uint32_t test = left_test; test <= right_test; test++) {
+        TestData test_data;
+        {
+            std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
+            input >> test_data;
+        }
+
+        Answer answer;
+        {
+            std::ifstream input(solutions_dir + "/test_" + std::to_string(test) + ".json");
+            if (input) {
+                input >> answer;
+            }
+        }
+
+        double score = answer.gold * 1000.0 / MAX_RAW_SCORES[test];
+        total += score;
+        std::cout << test << ": " << answer.gold << "/" << MAX_RAW_SCORES[test] << " " << score << std::endl;
+    }
+    std::cout << "Total: " << total << std::endl;
+}
+
 int main() {
 
-    //print_compare_simulates();
-    //return 0;
+    print_compare_scores("Solutions2", 1, 25);
 
-    run_solver();
+    //print_compare_simulates();
     return 0;
+
+    //run_solver();
+    //return 0;
 
     uint32_t test = 20;
     TestData test_data;
@@ -188,6 +268,35 @@ int main() {
 
 /*
 test relative_score raw_score
+
+в Solution2 находятся решения сервера на 21 час в 32 ядра и в log2.csv находится их лог
+1: 700/700 1000
+2: 2580/2665 968.105
+3: 226259/245608 921.22
+4: 121444/129770 935.84
+5: 6402021/6706160 954.648
+6: 11825964/12595524 938.902
+7: 2762177/2874331 960.981
+8: 355863/366423 971.181
+9: 458703/482073 951.522
+10: 1763429/1869111 943.459
+11: 1647422/1740182 946.695
+12: 3020/3050 990.164
+13: 3623/3732 970.793
+14: 755149/794646 950.296
+15: 2290431/2364185 968.804
+16: 1112222/1129413 984.779
+17: 16300041/18330001 889.255
+18: 973115/1140206 853.455
+19: 866023/1027001 843.254
+20: 732000/830000 881.928
+21: 545085/703000 775.37
+22: 27365/29824 917.55
+23: 42888/47579 901.406
+24: 19588/22501 870.539
+25: 17072/19447 877.873
+Total: 23168
+==========
 1 1000 700
 2 968 2580
 3 931 228778
