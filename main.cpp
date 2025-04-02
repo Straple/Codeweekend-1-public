@@ -71,7 +71,7 @@ const std::vector<uint32_t> MAX_RAW_SCORES = {
 
 void run_solver() {
 
-    std::filesystem::create_directories("Solutions2");
+    std::filesystem::create_directory("Solutions2");
 
     std::vector<uint32_t> tests = {
 
@@ -243,9 +243,78 @@ void print_compare_scores(const std::string &solutions_dir, uint32_t left_test, 
     std::cout << "Total: " << total << std::endl;
 }
 
+void launch_tests(const std::string &solutions_dir, uint32_t left_test, uint32_t right_test) {
+
+    std::filesystem::create_directory(solutions_dir);
+
+    ETimer total_timer;
+
+    std::vector<TestData> tests_data(51);
+    for (uint32_t test = 1; test <= 50; test++) {
+        ETimer timer;
+        std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
+        input >> tests_data[test];
+        std::cout << "reading tests data(" << test << "): " << timer << std::endl;
+    }
+    std::cout << "Total reading tests data: " << total_timer << std::endl;
+
+    std::vector<std::atomic<bool>> is_free(51);
+    for (auto &i: is_free) {
+        i = true;
+    }
+
+    std::ofstream logger("log.csv");
+
+    logger << "thr,test,gold,relative score,solve time,total time" << std::endl;
+
+    std::mutex mutex;
+
+    uint64_t total_relative_score = 0;
+    uint64_t total_gold = 0;
+
+    auto do_work = [&](uint32_t thr) {
+        for (uint32_t test = left_test; test <= right_test; test++) {
+            bool expected = true;
+            if (!is_free[test].compare_exchange_strong(expected, false)) {
+                continue;// уже занят
+            }
+
+            ETimer timer;
+
+            std::string filename = solutions_dir + "/test_" + std::to_string(test) + ".json";
+
+            Solver solver(tests_data[test]);
+            Answer answer = solver.solve(0);
+
+            {
+                std::ofstream output(filename);
+                ASSERT(output, "unable to open file for writing");
+                output << answer;
+            }
+
+            std::unique_lock locker(mutex);
+            uint64_t relative_score = answer.gold * 1000.0 / MAX_RAW_SCORES[test];
+            total_relative_score += relative_score;
+            total_gold += answer.gold;
+            logger << thr << ',' << test << ',' << answer.gold << ',' << relative_score << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
+        }
+    };
+
+    std::vector<std::thread> threads(THREADS);
+    for (uint32_t thr = 0; thr < THREADS; thr++) {
+        threads[thr] = std::thread(do_work, thr);
+    }
+    for (uint32_t thr = 0; thr < THREADS; thr++) {
+        threads[thr].join();
+    }
+
+    logger << "-1" << ',' << "0" << ',' << total_gold << ',' << total_relative_score << ',' << total_timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
+}
+
 int main() {
 
-    print_compare_scores("Solutions2", 1, 25);
+    launch_tests("Solutions3", 1, 25);
+    //print_compare_scores("Solutions3", 1, 25);
 
     //print_compare_simulates();
     return 0;
