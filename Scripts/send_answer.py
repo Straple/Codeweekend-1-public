@@ -95,7 +95,7 @@ def update_display_name(new_name):
 
 def mysubmit(test_id):
     try:
-        filename = "../Solutions/test_" + str(test_id) + ".json"
+        filename = "../Solutions2/test_" + str(test_id) + ".json"
         f = open(filename, "r")
         file_contents = f.read()
         s = submit(test_id, file_contents)
@@ -104,20 +104,45 @@ def mysubmit(test_id):
     except:
         print("failed to read:", test_id)
 
+
 def submit_all():
-    for i in range(50):
+    for i in range(25):
         mysubmit(i + 1)
 
 
-submit_all()
+def print_max_raw_scores(scoreboard):
+    tasks_raw_scores = [0 for i in range(51)]
+    for team in scoreboard["teams"]:
+        tasks = team["tasks"]
+        for task in tasks:
+            try:
+                task_id = int(task["task_id"])
+                raw_score = int(task["raw_score"])
+                tasks_raw_scores[task_id] = max(tasks_raw_scores[task_id], raw_score)
+            except:
+                pass
+    print("{")
+    print("0,")
+    for i in range(50):
+        print(str(tasks_raw_scores[i + 1]) + ",//", i + 1)
+    print("}")
+
+
+# submit_all()
 
 scoreboard = get_scoreboard()
+
+print_max_raw_scores(scoreboard)
+
+exit(0)
 
 total_relative_score = 0
 for team in scoreboard["teams"]:
     if team["team_members"] == "Egor Yukhnevich":
         tasks = team["tasks"]
         for task in tasks:
+            if task["task_id"] > 25:
+                break
             print(task["task_id"], int(task["relative_score"]), int(task["raw_score"]))
             total_relative_score += task["relative_score"]
 
