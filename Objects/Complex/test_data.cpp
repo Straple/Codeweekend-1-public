@@ -6,7 +6,43 @@
 using json = nlohmann::json;
 
 void TestData::build() {
+    // build monsters_order
+    {
+        // TODO: tests 26-50
+        //std::cout << "Test id: " << test_id << '\n';
+        // (hp, exp, gold)
+        //std::map<std::tuple<uint32_t, uint32_t, uint32_t>, uint32_t> map;
+
+        for (uint32_t m = 0; m < monsters.size(); m++) {
+            auto &monster = monsters[m];
+
+            // skip bad monsters
+            if (test_id == 17 && monster.gold == 1) {
+                continue;
+            } else if (test_id == 18 && monster.gold == 1) {
+                continue;
+            } else if (test_id == 19 && monster.gold == 1) {
+                continue;
+            } else if (test_id == 20 && monster.gold == 1) {
+                continue;
+            } else if (test_id == 21 && monster.gold == 1) {
+                continue;
+            }
+
+            monsters_order.push_back(m);
+
+            //map[{monster.hp, monster.exp, monster.gold}]++;
+        }
+        /*for (auto [params, cnt]: map) {
+            if (cnt != 1) {
+                auto [hp, exp, gold] = params;
+                std::cout << hp << ' ' << exp << ' ' << gold << ":  " << cnt << '\n';
+            }
+        }*/
+    }
+
     monsters_attack.assign((height + 1) * (width + 1), {});
+
     return;
     for (uint32_t y = 0; y <= height; y++) {
         for (uint32_t x = 0; x <= width; x++) {
@@ -29,6 +65,8 @@ std::istream &operator>>(std::istream &input, TestData &data) {
 
     try {
         json json = json::parse(input);
+
+        data.test_id = json["test_id"];
 
         data.height = json["height"];
         data.width = json["width"];

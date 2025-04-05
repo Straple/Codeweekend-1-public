@@ -17,14 +17,17 @@ struct Hero {
 struct Monster {
     uint32_t x = 0;
     uint32_t y = 0;
+
     uint32_t hp = 0;
     uint32_t exp = 0;
     uint32_t gold = 0;
+
     uint32_t range = 0;
     uint32_t attack = 0;
 };
 
 struct TestData {
+    uint32_t test_id = 0;
     uint32_t num_turns = 0;
     uint32_t width = 0;
     uint32_t height = 0;
@@ -37,6 +40,8 @@ struct TestData {
 
     // monsters_attack[y * (width + 1) + x] = { monsters which attack this cell (x, y) }
     std::vector<std::vector<uint32_t>> monsters_attack;
+
+    std::vector<uint32_t> monsters_order;
 
     void build();
 };

@@ -67,9 +67,9 @@ const std::vector<uint32_t> MAX_RAW_SCORES = {
         142221,  // 50
 };
 
-void run_solver() {
+void run_solver(const std::string &dirname) {
 
-    std::filesystem::create_directory("Solutions2");
+    std::filesystem::create_directories(dirname);
 
     std::vector<uint32_t> tests = {
 
@@ -120,11 +120,11 @@ void run_solver() {
 
             Timer timer;
 
-            std::string filename = "Solutions2/test_" + std::to_string(test) + ".json";
+            std::string filename = dirname + "/test_" + std::to_string(test) + ".json";
 
             std::vector<uint32_t> monsters_order;
             uint32_t old_gold = 0;
-            if (std::filesystem::exists(filename) && rnd.get_d() < 0.8) {
+            if (std::filesystem::exists(filename) && rnd.get_d() < 0.5) {
                 Answer old_answer;
                 lock(test);
                 std::ifstream input(filename);
@@ -134,8 +134,8 @@ void run_solver() {
 
                 monsters_order = old_answer.monsters_order;
 
-                // случайно пореверсим порядок монстров
-                uint32_t k = rnd.get(0, 5);
+                // случайно пошафлим подотрезок монстров
+                uint32_t k = rnd.get(0, 1);
                 for (uint32_t i = 0; i < k; i++) {
                     uint32_t l = rnd.get(0, monsters_order.size() - 1);
                     uint32_t r = rnd.get(0, monsters_order.size() - 1);
@@ -144,12 +144,11 @@ void run_solver() {
                         std::swap(l, r);
                     }
 
-                    std::reverse(monsters_order.begin() + l, monsters_order.begin() + r);
+                    std::shuffle(monsters_order.begin() + l, monsters_order.begin() + r, rnd.generator);
                 }
 
             } else {
-                monsters_order.resize(tests_data[test].monsters.size());
-                std::iota(monsters_order.begin(), monsters_order.end(), 0);
+                monsters_order = tests_data[test].monsters_order;
                 std::shuffle(monsters_order.begin(), monsters_order.end(), rnd.generator);
             }
 
@@ -173,10 +172,10 @@ void run_solver() {
                 output << answer;
 
                 std::unique_lock locker(mutex);
-                logger << "improve " << old_gold << " -> " << answer.gold << "," << thr << ',' << test << ',' << answer.gold << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
+                logger << "improve " << old_gold * 1000 / MAX_RAW_SCORES[test] << " -> " << answer.gold * 1000 / MAX_RAW_SCORES[test] << "," << thr << ',' << test << ',' << answer.gold << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
             } else {
                 std::unique_lock locker(mutex);
-                logger << "failed " << old_gold << " -> " << answer.gold << "," << thr << ',' << test << ',' << answer.gold << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
+                logger << "failed " << old_gold * 1000 / MAX_RAW_SCORES[test] << " -> " << answer.gold * 1000 / MAX_RAW_SCORES[test] << "," << thr << ',' << test << ',' << answer.gold << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
             }
 
             unlock(test);
@@ -296,14 +295,14 @@ void launch_tests(const std::string &solutions_dir, uint32_t left_test, uint32_t
 
 int main() {
 
-    launch_tests("Solutions3", 1, 25);
-    //print_compare_scores("Solutions3", 1, 25);
-
-    //print_compare_simulates("Solutions3", 1, 25);
-    return 0;
-
-    //run_solver();
+    run_solver("Solutions");
     //return 0;
+
+    // launch_tests("Solutions3", 1, 25);
+    // print_compare_scores("Solutions_kek", 1, 25);
+
+    // print_compare_simulates("Solutions3", 1, 25);
+    return 0;
 
     uint32_t test = 20;
     TestData test_data;

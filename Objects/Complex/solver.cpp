@@ -19,9 +19,9 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_see
 
     Randomizer rnd(random_seed);
 
-    std::vector<bool> is_killed(monsters_order.size());
+    std::vector<bool> is_killed(test_data.monsters.size());
 
-    ASSERT(test_data.monsters.size() == monsters_order.size(), "invalid monsters order");
+    ASSERT(test_data.monsters_order.size() == monsters_order.size(), "invalid monsters order");
 
     for (uint32_t monster_it = 0; monster_it < monsters_order.size(); monster_it++) {
         uint32_t monster_id = monsters_order[monster_it];
@@ -696,8 +696,9 @@ Solver::Solver(std::vector<uint32_t> copy_monsters_order, TestData copy_test_dat
 
 Solver::Solver(TestData copy_test_data) : test_data(std::move(copy_test_data)) {
     ASSERT(!test_data.monsters.empty(), "monsters is empty");
-    answer.monsters_order.resize(test_data.monsters.size());
-    std::iota(answer.monsters_order.begin(), answer.monsters_order.end(), 0);
+    answer.monsters_order = test_data.monsters_order;
+    //answer.monsters_order.resize(test_data.monsters.size());
+    //std::iota(answer.monsters_order.begin(), answer.monsters_order.end(), 0);
     answer = simulate(answer.monsters_order, answer.random_seed, test_data);
 }
 
@@ -755,7 +756,7 @@ Answer Solver::solve(uint64_t random_seed) {
     for (;
          //step <= 2'000'000
          ; step++) {
-        if (step % 10 == 0 && timer.get_ms() > 60'000) {
+        if (step % 10 == 0 && timer.get_ms() > 120'000) {
             break;
         }
 
