@@ -24,8 +24,6 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_see
     ASSERT(test_data.monsters.size() == monsters_order.size(), "invalid monsters order");
 
     for (uint32_t monster_it = 0; monster_it < monsters_order.size(); monster_it++) {
-        answer.last_monster_i = monster_it;
-
         uint32_t monster_id = monsters_order[monster_it];
         const auto &monster = test_data.monsters[monster_id];
 
@@ -160,6 +158,7 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_see
 
         // убили монстра
         if (total_damage >= monster.hp) {
+            answer.last_monster_i = monster_it;
             is_killed[monster_id] = true;
 
             // монстр не атаковал нас после смерти
@@ -483,32 +482,14 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_see
 }*/
 
 bool Solver::try_swap(Randomizer &rnd) {
-    Answer new_answer = answer;
-    uint32_t a = rnd.get(0, new_answer.monsters_order.size() - 1);
-    uint32_t b = rnd.get(0, new_answer.monsters_order.size() - 1);
-
-    if (a == b) {
+    uint32_t a = rnd.get(0, answer.last_monster_i);
+    uint32_t b = a + rnd.get(-10, 10);
+    if (a == b || b >= answer.monsters_order.size()) {
         return false;
     }
 
+    Answer new_answer = answer;
     std::swap(new_answer.monsters_order[a], new_answer.monsters_order[b]);
-
-    new_answer = simulate(new_answer.monsters_order, new_answer.random_seed, test_data);
-
-    if (compare(answer.score, new_answer.score, temp, rnd)) {
-        answer = std::move(new_answer);
-        return true;
-    } else {
-        return false;
-    }
-}
-
-bool Solver::try_throw(Randomizer &rnd) {
-    Answer new_answer = answer;
-    uint32_t a = rnd.get(0, new_answer.monsters_order.size() - 2);
-
-    std::swap(new_answer.monsters_order[a], new_answer.monsters_order.back());
-
     new_answer = simulate(new_answer.monsters_order, new_answer.random_seed, test_data);
 
     if (compare(answer.score, new_answer.score, temp, rnd)) {
@@ -538,33 +519,60 @@ bool Solver::try_insert(Randomizer &rnd) {
     }
 }
 
+bool Solver::try_move(Randomizer &rnd) {
+    Answer new_answer = answer;
+
+    uint32_t a = rnd.get(0, new_answer.monsters_order.size() - 1);
+    uint32_t monster_id = new_answer.monsters_order[a];
+    new_answer.monsters_order.erase(new_answer.monsters_order.begin() + a);
+
+    uint32_t left = a >= 10 ? a - 10 : 0;
+    uint32_t right = std::min(a + 10, static_cast<uint32_t>(new_answer.monsters_order.size()));
+
+    new_answer.monsters_order.insert(new_answer.monsters_order.begin() + rnd.get(left, right), monster_id);
+
+    new_answer = simulate(new_answer.monsters_order, new_answer.random_seed, test_data);
+
+    if (compare(answer.score, new_answer.score, temp, rnd)) {
+        answer = std::move(new_answer);
+        return true;
+    } else {
+        return false;
+    }
+}
+
 bool Solver::try_insert_smart(Randomizer &rnd) {
     Answer new_answer = answer;
 
     {
-        uint32_t old_num_turns = test_data.num_turns;
-        test_data.num_turns = rnd.get(1, test_data.num_turns - 1);
-        Answer incomplete_answer = simulate(new_answer.monsters_order, new_answer.random_seed, test_data);
-        test_data.num_turns = old_num_turns;
+        uint32_t k = rnd.get(0, new_answer.last_monster_i);
 
-        for (uint32_t K = rnd.get(1, 10); K > 0 && incomplete_answer.last_monster_i < new_answer.monsters_order.size(); K--) {
+        for (uint32_t z = rnd.get(1, 5); z > 0 && k + 1 < new_answer.monsters_order.size(); z--) {
+            const auto &cur_monster = test_data.monsters[new_answer.monsters_order[k]];
+            // найдем ближайшего монстра к cur_monster
 
-            // найдем самого близкого монстра
-            uint32_t best_m = new_answer.monsters_order[incomplete_answer.last_monster_i];
-            for (uint32_t i = incomplete_answer.last_monster_i; i < new_answer.monsters_order.size(); i++) {
-                auto &best_monster = test_data.monsters[best_m];
-                auto &monster = test_data.monsters[new_answer.monsters_order[i]];
+            auto get_score = [&](uint32_t m) {
+                const auto &monster = test_data.monsters[m];
+                int64_t score = 0;
+                score -= get_dist(cur_monster.x, cur_monster.y, monster.x, monster.y);
+                score += monster.gold;
+                return score;
+            };
 
-                if (get_dist(incomplete_answer.x, incomplete_answer.y, best_monster.x, best_monster.y) >
-                    get_dist(incomplete_answer.x, incomplete_answer.y, monster.x, monster.y)) {
+            uint32_t best_m = new_answer.monsters_order[k + 1];
+            int64_t best_score = get_score(best_m);
+            for (uint32_t i = k + 1; i < new_answer.monsters_order.size(); i++) {
 
+                int64_t score = get_score(new_answer.monsters_order[i]);
+                if (best_score < score) {
+                    best_score = score;
                     best_m = new_answer.monsters_order[i];
                 }
             }
-            new_answer.monsters_order.erase(std::find(new_answer.monsters_order.begin(), new_answer.monsters_order.end(), best_m));
-            new_answer.monsters_order.insert(new_answer.monsters_order.begin() + incomplete_answer.last_monster_i, best_m);
 
-            incomplete_answer.last_monster_i++;
+            new_answer.monsters_order.erase(std::find(new_answer.monsters_order.begin(), new_answer.monsters_order.end(), best_m));
+            new_answer.monsters_order.insert(new_answer.monsters_order.begin() + k + 1, best_m);
+            k++;
         }
     }
 
@@ -610,7 +618,7 @@ bool Solver::try_insert_segment(Randomizer &rnd) {
 bool Solver::try_reverse(Randomizer &rnd) {
     Answer new_answer = answer;
     uint32_t l = rnd.get(0, new_answer.monsters_order.size() - 1);
-    uint32_t r = rnd.get(0, new_answer.monsters_order.size() - 1);
+    uint32_t r = rnd.get(0, new_answer.monsters_order.size() - 1);//uint32_t r = std::min(l + (uint32_t) rnd.get(3, 30), (uint32_t) new_answer.monsters_order.size() - 1);
 
     if (l > r) {
         std::swap(l, r);
@@ -622,6 +630,7 @@ bool Solver::try_reverse(Randomizer &rnd) {
     ASSERT(0 <= l && l < r && r < new_answer.monsters_order.size(), "invalid segment");
 
     std::reverse(new_answer.monsters_order.begin() + l, new_answer.monsters_order.begin() + r);
+    //std::shuffle(new_answer.monsters_order.begin() + l, new_answer.monsters_order.begin() + r, rnd.generator);
 
     new_answer = simulate(new_answer.monsters_order, new_answer.random_seed, test_data);
 
@@ -728,13 +737,51 @@ Answer Solver::solve(uint64_t random_seed) {
         // try_insert_smart(rnd); // 518113
         // try_reverse(rnd);// 263057
 
-        if (p < 0.5) {
+
+        // ~20200
+        /*if (p < 0.5) {
             try_insert_smart(rnd);
         } else if (p < 0.8) {
             try_insert(rnd);
         } else {
             try_reverse(rnd);
+        }*/
+
+        // 16155
+        // try_insert_smart(rnd);
+
+        // 16556
+        // try_insert(rnd);
+
+        // 20639 -> 21305
+        /*if (p < 0.5) {
+            try_insert_smart(rnd);
+        } else if (p < 0.8) {
+            try_insert(rnd);
+        } else {
+            try_swap(rnd);
+        }*/
+
+        //21236
+        if (p < 0.6) {
+            try_insert_smart(rnd);
+        } else if (p < 0.8) {
+            try_insert(rnd);
+        } else if (p < 0.9) {
+            try_swap(rnd);
+        } else {
+            try_reverse(rnd);
         }
+
+        /*
+        if (p < 0.33) {
+            try_swap(rnd);
+        } else if (p < 0.66) {
+            try_move(rnd);
+        } else {
+            try_insert(rnd);
+        }
+         */
 
         if (answer.score > best_answer.score) {
             best_answer = answer;

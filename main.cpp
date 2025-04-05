@@ -291,6 +291,7 @@ void launch_tests(const std::string &solutions_dir, uint32_t left_test, uint32_t
     });
 
     logger << "-1" << ',' << "0" << ',' << total_gold << ',' << total_relative_score << ',' << total_timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
+    std::cout << total_relative_score << std::endl;
 }
 
 int main() {

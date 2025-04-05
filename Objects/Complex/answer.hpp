@@ -31,6 +31,7 @@ struct Answer {
 
     uint64_t random_seed = 0;
 
+    // последний указатель на монстра в monsters_order, которого мы убили
     uint32_t last_monster_i = 0;
 
     std::vector<uint32_t> monsters_order;

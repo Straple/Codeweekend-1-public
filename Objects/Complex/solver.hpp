@@ -16,13 +16,13 @@ class Solver {
 
     bool try_swap(Randomizer &rnd);
 
-    bool try_throw(Randomizer &rnd);
-
     bool try_insert(Randomizer &rnd);
 
     bool try_insert_smart(Randomizer &rnd);
 
     bool try_insert_segment(Randomizer &rnd);
+
+    bool try_move(Randomizer &rnd);
 
     bool try_reverse(Randomizer &rnd);
 
