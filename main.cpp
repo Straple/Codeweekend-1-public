@@ -184,9 +184,9 @@ void run_solver() {
     });
 }
 
-void print_compare_simulates() {
+void print_compare_simulates(const std::string &solutions_dir, uint32_t left_test, uint32_t right_test) {
     double total_p = 0;
-    for (uint32_t test = 1; test <= 25; test++) {
+    for (uint32_t test = left_test; test <= right_test; test++) {
         TestData test_data;
         {
             std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
@@ -195,7 +195,7 @@ void print_compare_simulates() {
 
         Answer answer;
         {
-            std::ifstream input("Solutions/test_" + std::to_string(test) + ".json");
+            std::ifstream input(solutions_dir + "/test_" + std::to_string(test) + ".json");
             input >> answer;
         }
 
@@ -240,7 +240,7 @@ void launch_tests(const std::string &solutions_dir, uint32_t left_test, uint32_t
     Timer total_timer;
 
     std::vector<TestData> tests_data(51);
-    for (uint32_t test = 1; test <= 50; test++) {
+    for (uint32_t test = left_test; test <= right_test; test++) {
         Timer timer;
         std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
         input >> tests_data[test];
@@ -299,7 +299,7 @@ int main() {
     launch_tests("Solutions3", 1, 25);
     //print_compare_scores("Solutions3", 1, 25);
 
-    //print_compare_simulates();
+    //print_compare_simulates("Solutions3", 1, 25);
     return 0;
 
     //run_solver();

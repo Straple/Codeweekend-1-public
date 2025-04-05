@@ -26,7 +26,7 @@ class Solver {
 
     bool try_reverse(Randomizer &rnd);
 
-    bool try_change_seed(Randomizer &rnd);
+    bool try_change_settings(Randomizer &rnd);
 
 public:
     Solver(std::vector<uint32_t> monsters_order, TestData test_data);

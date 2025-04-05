@@ -4,7 +4,7 @@
 
 #define ENABLE_ASSERT
 
-constexpr uint32_t THREADS = 32;
+constexpr uint32_t THREADS = 25;
 
 constexpr uint32_t RANDOM_SEED = 42;
 

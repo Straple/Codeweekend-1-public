@@ -63,39 +63,44 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_see
                 double len = std::sqrt(dx * dx + dy * dy);
                 dx /= len;
                 dy /= len;
-                len = std::min(speed * 1.0, len);
+                len = std::min(speed * 1.0 - 1, len - 1);
                 px = answer.x + dx * len;
                 py = answer.y + dy * len;
 
-                constexpr uint32_t K = 2;
+                uint32_t left_x = px < answer.window_len ? 0 : px - answer.window_len;
+                uint32_t right_x = std::min(px + answer.window_len, test_data.width);
 
-                uint32_t left_x = px < K ? 0 : px - K;
-                uint32_t right_x = std::min(px + K, test_data.width);
+                uint32_t left_y = py < answer.window_len ? 0 : py - answer.window_len;
+                uint32_t right_y = std::min(py + answer.window_len, test_data.height);
 
-                uint32_t left_y = py < K ? 0 : py - K;
-                uint32_t right_y = std::min(py + K, test_data.height);
+                auto get_dot_score = [&](uint32_t to_x, uint32_t to_y) {
+                    // 22008
+                    int64_t score;
+                    score -= get_dist(to_x, to_y, monster.x, monster.y);
 
-                uint32_t best_dist = get_dist(best_to_x, best_to_y, monster.x, monster.y);
+                    // 22217
+                    if (get_dist(to_x, to_y, monster.x, monster.y) <= range * range) {
+                        score = 1'000'000;
 
-                /*for (uint32_t to_y = left_y; to_y <= right_y; to_y++) {
-                    for (uint32_t to_x = left_x; to_x <= right_x; to_x++) {
-                        // не можем допрыгнуть туда
-                        if (get_dist(answer.x, answer.y, to_x, to_y) > speed * speed) {
-                            continue;
+                        uint32_t it = monster_it + 1;
+                        if (it < answer.monsters_order.size()) {
+                            const auto &monster = test_data.monsters[answer.monsters_order[it]];
+                            score -= get_dist(to_x, to_y, monster.x, monster.y);
                         }
 
-                        uint32_t dist = get_dist(to_x, to_y, monster.x, monster.y);
-
-                        if (dist < best_dist) {
-                            best_dist = dist;
-                            best_to_x = to_x;
-                            best_to_y = to_y;
-                        }
+                        /*for (uint32_t it = monster_it; it < answer.monsters_order.size(); it++) {
+                            const auto &monster = test_data.monsters[answer.monsters_order[it]];
+                            if (get_dist(to_x, to_y, monster.x, monster.y) > range * range) {
+                                score -= get_dist(to_x, to_y, monster.x, monster.y);
+                                break;
+                            }
+                            score += 100'000;
+                        }*/
                     }
-                }*/
+                    return score;
+                };
 
-                // умный выбор точки, но медленный
-                std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> dots;
+                int64_t best_score = -1e18;
 
                 for (uint32_t to_y = left_y; to_y <= right_y; to_y++) {
                     for (uint32_t to_x = left_x; to_x <= right_x; to_x++) {
@@ -104,32 +109,51 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_see
                             continue;
                         }
 
-                        uint32_t dist = get_dist(to_x, to_y, monster.x, monster.y);
-                        dots.emplace_back(dist, to_x, to_y);
+                        int64_t score = get_dot_score(to_x, to_y);
+
+                        if (score > best_score) {
+                            best_score = score;
+                            best_to_x = to_x;
+                            best_to_y = to_y;
+                        }
                     }
                 }
+                // умный выбор точки, но медленный
+                /*std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> dots;
 
-                {
-                    uint32_t monster_iter = monster_it;
-                    while (monster_iter < monsters_order.size()) {
-                        const auto &cur_monster = test_data.monsters[monsters_order[monster_iter]];
-                        for (auto &[dist, to_x, to_y]: dots) {
-                            dist = get_dist(to_x, to_y, cur_monster.x, cur_monster.y);
-                        }
-                        std::sort(dots.begin(), dots.end());
+                    for (uint32_t to_y = left_y; to_y <= right_y; to_y++) {
+                        for (uint32_t to_x = left_x; to_x <= right_x; to_x++) {
+                            // не можем допрыгнуть туда
+                            if (get_dist(answer.x, answer.y, to_x, to_y) > speed * speed) {
+                                continue;
+                            }
 
-                        if (std::get<0>(dots[0]) > range * range) {
-                            break;
+                            uint32_t dist = get_dist(to_x, to_y, monster.x, monster.y);
+                            dots.emplace_back(dist, to_x, to_y);
                         }
-
-                        while (std::get<0>(dots.back()) > range * range) {
-                            dots.pop_back();
-                        }
-                        monster_iter++;
                     }
 
-                    std::tie(best_dist, best_to_x, best_to_y) = dots[0];
-                }
+                    {
+                        uint32_t monster_iter = monster_it;
+                        while (monster_iter < monsters_order.size()) {
+                            const auto &cur_monster = test_data.monsters[monsters_order[monster_iter]];
+                            for (auto &[dist, to_x, to_y]: dots) {
+                                dist = get_dist(to_x, to_y, cur_monster.x, cur_monster.y);
+                            }
+                            std::sort(dots.begin(), dots.end());
+
+                            if (std::get<0>(dots[0]) > range * range) {
+                                break;
+                            }
+
+                            while (std::get<0>(dots.back()) > range * range) {
+                                dots.pop_back();
+                            }
+                            monster_iter++;
+                        }
+
+                        std::tie(best_dist, best_to_x, best_to_y) = dots[0];
+                    }*/
 
                 return {best_to_x, best_to_y};
             };
@@ -642,9 +666,17 @@ bool Solver::try_reverse(Randomizer &rnd) {
     }
 }
 
-bool Solver::try_change_seed(Randomizer &rnd) {
+bool Solver::try_change_settings(Randomizer &rnd) {
     Answer new_answer = answer;
-    new_answer.random_seed = rnd.get();
+
+    double p = rnd.get_d();
+
+    if (p < 5) {
+        //new_answer.random_seed = rnd.get();
+        new_answer.window_len = rnd.get(1, 6);
+    } else {
+        // TODO
+    }
 
     new_answer = simulate(new_answer.monsters_order, new_answer.random_seed, test_data);
 
@@ -723,7 +755,7 @@ Answer Solver::solve(uint64_t random_seed) {
     for (;
          //step <= 2'000'000
          ; step++) {
-        if (step % 10 == 0 && timer.get_ms() > 30'000) {
+        if (step % 10 == 0 && timer.get_ms() > 60'000) {
             break;
         }
 
@@ -762,8 +794,9 @@ Answer Solver::solve(uint64_t random_seed) {
             try_swap(rnd);
         }*/
 
-        //21236
-        if (p < 0.6) {
+        if (p < 0.1) {
+            try_change_settings(rnd);
+        } else if (p < 0.6) {
             try_insert_smart(rnd);
         } else if (p < 0.8) {
             try_insert(rnd);
@@ -793,7 +826,7 @@ Answer Solver::solve(uint64_t random_seed) {
             temp_mult = (temp_mult + 1) / 2;
         } else {
             // failed
-            temp_mult = std::min(temp_mult * 1.0005, 30'000.0);
+            temp_mult = std::min(temp_mult * 1.0005, 60'000.0);
         }
 
         if (step % 1'000 == 0) {

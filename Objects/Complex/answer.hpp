@@ -27,6 +27,9 @@ struct Answer {
 
     double score = 0;
 
+    // настройки симуляции
+    uint32_t window_len = 2; // размер окна, в котором мы ищем точку прыжка
+
     std::vector<Action> actions;
 
     uint64_t random_seed = 0;
