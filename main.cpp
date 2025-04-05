@@ -172,10 +172,10 @@ void run_solver(const std::string &dirname) {
                 output << answer;
 
                 std::unique_lock locker(mutex);
-                logger << "improve " << old_gold * 1000 / MAX_RAW_SCORES[test] << " -> " << answer.gold * 1000 / MAX_RAW_SCORES[test] << "," << thr << ',' << test << ',' << answer.gold << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
+                logger << "improve " << old_gold * 1000ULL / MAX_RAW_SCORES[test] << " -> " << answer.gold * 1000ULL / MAX_RAW_SCORES[test] << "," << thr << ',' << test << ',' << answer.gold << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
             } else {
                 std::unique_lock locker(mutex);
-                logger << "failed " << old_gold * 1000 / MAX_RAW_SCORES[test] << " -> " << answer.gold * 1000 / MAX_RAW_SCORES[test] << "," << thr << ',' << test << ',' << answer.gold << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
+                logger << "failed " << old_gold * 1000ULL / MAX_RAW_SCORES[test] << " -> " << answer.gold * 1000ULL / MAX_RAW_SCORES[test] << "," << thr << ',' << test << ',' << answer.gold << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
             }
 
             unlock(test);
@@ -295,10 +295,12 @@ void launch_tests(const std::string &solutions_dir, uint32_t left_test, uint32_t
 
 int main() {
 
-    run_solver("Solutions");
+    //run_solver("Solutions");
     //return 0;
 
-    // launch_tests("Solutions3", 1, 25);
+    // в ответах у меня: 16680
+    // сейчас получаю: 8123
+    launch_tests("Solutions3", 26, 50);
     // print_compare_scores("Solutions_kek", 1, 25);
 
     // print_compare_simulates("Solutions3", 1, 25);

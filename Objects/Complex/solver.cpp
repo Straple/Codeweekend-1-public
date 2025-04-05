@@ -41,7 +41,6 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_see
 
         auto update_fatigue = [&](uint32_t cnt) {
             uint32_t pos = answer.y * (test_data.width + 1) + answer.x;
-            ASSERT(test_data.monsters_attack[pos].empty(), "is not empty");
             for (uint32_t m: test_data.monsters_attack[pos]) {
                 if (!is_killed[m]) {
                     answer.fatigue += test_data.monsters[m].attack * cnt;
@@ -756,7 +755,7 @@ Answer Solver::solve(uint64_t random_seed) {
     for (;
          //step <= 2'000'000
          ; step++) {
-        if (step % 10 == 0 && timer.get_ms() > 120'000) {
+        if (step % 10 == 0 && timer.get_ms() > 30'000) {
             break;
         }
 

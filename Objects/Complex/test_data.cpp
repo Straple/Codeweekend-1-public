@@ -9,9 +9,9 @@ void TestData::build() {
     // build monsters_order
     {
         // TODO: tests 26-50
-        //std::cout << "Test id: " << test_id << '\n';
+        // std::cout << "Test id: " << test_id << '\n';
         // (hp, exp, gold)
-        //std::map<std::tuple<uint32_t, uint32_t, uint32_t>, uint32_t> map;
+        // std::map<std::tuple<uint32_t, uint32_t, uint32_t>, uint32_t> map;
 
         for (uint32_t m = 0; m < monsters.size(); m++) {
             auto &monster = monsters[m];
@@ -27,12 +27,19 @@ void TestData::build() {
                 continue;
             } else if (test_id == 21 && monster.gold == 1) {
                 continue;
+            } else if (test_id == 36 && monster.hp == 7777777) {
+                continue;
+            } else if (test_id == 37 && monster.hp == 7777777) {
+                continue;
+            } else if (monster.hp / hero.base_power >= 50) {
+                continue;// слишком жирный
             }
 
             monsters_order.push_back(m);
 
-            //map[{monster.hp, monster.exp, monster.gold}]++;
+            // map[{monster.hp, monster.exp, monster.gold}]++;
         }
+        //std::cout << monsters.size() << " -> " << monsters_order.size() << '\n';
         /*for (auto [params, cnt]: map) {
             if (cnt != 1) {
                 auto [hp, exp, gold] = params;
@@ -43,18 +50,20 @@ void TestData::build() {
 
     monsters_attack.assign((height + 1) * (width + 1), {});
 
-    return;
-    for (uint32_t y = 0; y <= height; y++) {
-        for (uint32_t x = 0; x <= width; x++) {
-            for (uint32_t m = 0; m < monsters.size(); m++) {
-                const auto &monster = monsters[m];
-
-                if (monster.attack == 0 ||
-                    get_dist(x, y, monster.x, monster.y) > monster.range * monster.range) {
-                    continue;
+    for (uint32_t m = 0; m < monsters.size(); m++) {
+        const auto &monster = monsters[m];
+        if (monster.attack == 0) {
+            continue;
+        }
+        uint32_t left = monster.x >= monster.range ? monster.x - monster.range : 0;
+        uint32_t right = std::min(width, monster.x + monster.range);
+        uint32_t top = monster.y >= monster.range ? monster.y - monster.range : 0;
+        uint32_t bottom = std::min(height, monster.y + monster.range);
+        for (uint32_t y = top; y <= bottom; y++) {
+            for (uint32_t x = left; x <= right; x++) {
+                if (get_dist(x, y, monster.x, monster.y) <= monster.range * monster.range) {
+                    monsters_attack[y * (width + 1) + x].push_back(m);
                 }
-
-                monsters_attack[y * (width + 1) + x].push_back(m);
             }
         }
     }
