@@ -83,10 +83,10 @@ void run_solver() {
 
     logger << "message,thr,test,gold,solve time,total time" << std::endl;
 
-    ETimer timer;
+    Timer timer;
     std::vector<TestData> tests_data(51);
     for (uint32_t test = 1; test <= 50; test++) {
-        ETimer timer;
+        Timer timer;
         std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
         input >> tests_data[test];
         std::cout << "reading tests data(" << test << "): " << timer << std::endl;
@@ -98,7 +98,7 @@ void run_solver() {
         i = true;
     }
 
-    ETimer total_timer;
+    Timer total_timer;
 
     std::mutex mutex;
 
@@ -120,7 +120,7 @@ void run_solver() {
         while (!std::filesystem::exists("exit")) {
             uint32_t test = rnd.get(tests);
 
-            ETimer timer;
+            Timer timer;
 
             std::string filename = "Solutions2/test_" + std::to_string(test) + ".json";
 
@@ -247,11 +247,11 @@ void launch_tests(const std::string &solutions_dir, uint32_t left_test, uint32_t
 
     std::filesystem::create_directory(solutions_dir);
 
-    ETimer total_timer;
+    Timer total_timer;
 
     std::vector<TestData> tests_data(51);
     for (uint32_t test = 1; test <= 50; test++) {
-        ETimer timer;
+        Timer timer;
         std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
         input >> tests_data[test];
         std::cout << "reading tests data(" << test << "): " << timer << std::endl;
@@ -279,7 +279,7 @@ void launch_tests(const std::string &solutions_dir, uint32_t left_test, uint32_t
                 continue;// уже занят
             }
 
-            ETimer timer;
+            Timer timer;
 
             std::string filename = solutions_dir + "/test_" + std::to_string(test) + ".json";
 

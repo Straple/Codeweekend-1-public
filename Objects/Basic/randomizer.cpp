@@ -1,4 +1,4 @@
-#include "randomizer.hpp"
+#include <Objects/Basic/randomizer.hpp>
 
 Randomizer::Randomizer() : generator(202) {
 }

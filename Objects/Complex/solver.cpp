@@ -663,7 +663,7 @@ Solver::Solver(TestData copy_test_data) : test_data(std::move(copy_test_data)) {
 Answer Solver::solve(uint64_t random_seed) {
     Randomizer rnd(random_seed);
 
-    ETimer timer;
+    Timer timer;
 
     Answer best_answer = answer;
 
@@ -714,7 +714,7 @@ Answer Solver::solve(uint64_t random_seed) {
     for (;
          //step <= 2'000'000
          ; step++) {
-        if (step % 10 == 0 && timer.get_ms() > 120'000) {
+        if (step % 10 == 0 && timer.get_ms() > 30'000) {
             break;
         }
 
