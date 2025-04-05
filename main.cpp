@@ -3,17 +3,15 @@
 #include <Objects/Complex/answer.hpp>
 #include <Objects/Complex/solver.hpp>
 #include <Objects/Complex/test_data.hpp>
-
-#include <chrono>
-#include <fstream>
-#include <iostream>
-#include <set>
-#include <thread>
+#include <Objects/Tools/tools.hpp>
 
 #include <atomic>
+#include <chrono>
 #include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <mutex>
-#include <thread>
+#include <set>
 
 const std::vector<uint32_t> MAX_RAW_SCORES = {
         0,
@@ -115,7 +113,7 @@ void run_solver() {
         is_free[test] = true;
     };
 
-    auto do_work = [&](uint32_t thr) {
+    launch_threads(THREADS, [&](uint32_t thr) {
         Randomizer rnd(thr * 6124231 + RANDOM_SEED);
         while (!std::filesystem::exists("exit")) {
             uint32_t test = rnd.get(tests);
@@ -183,15 +181,7 @@ void run_solver() {
 
             unlock(test);
         }
-    };
-
-    std::vector<std::thread> threads(THREADS);
-    for (uint32_t thr = 0; thr < THREADS; thr++) {
-        threads[thr] = std::thread(do_work, thr);
-    }
-    for (uint32_t thr = 0; thr < THREADS; thr++) {
-        threads[thr].join();
-    }
+    });
 }
 
 void print_compare_simulates() {
@@ -272,7 +262,7 @@ void launch_tests(const std::string &solutions_dir, uint32_t left_test, uint32_t
     uint64_t total_relative_score = 0;
     uint64_t total_gold = 0;
 
-    auto do_work = [&](uint32_t thr) {
+    launch_threads(THREADS, [&](uint32_t thr) {
         for (uint32_t test = left_test; test <= right_test; test++) {
             bool expected = true;
             if (!is_free[test].compare_exchange_strong(expected, false)) {
@@ -298,15 +288,7 @@ void launch_tests(const std::string &solutions_dir, uint32_t left_test, uint32_t
             total_gold += answer.gold;
             logger << thr << ',' << test << ',' << answer.gold << ',' << relative_score << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
         }
-    };
-
-    std::vector<std::thread> threads(THREADS);
-    for (uint32_t thr = 0; thr < THREADS; thr++) {
-        threads[thr] = std::thread(do_work, thr);
-    }
-    for (uint32_t thr = 0; thr < THREADS; thr++) {
-        threads[thr].join();
-    }
+    });
 
     logger << "-1" << ',' << "0" << ',' << total_gold << ',' << total_relative_score << ',' << total_timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
 }

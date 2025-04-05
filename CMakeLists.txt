@@ -11,6 +11,7 @@ include_directories(".")
 file(GLOB SOURCES
         Objects/Basic/*.cpp
         Objects/Complex/*.cpp
+        Objects/Tools/*.cpp
         )
 
 add_executable(solution main.cpp ${SOURCES})
