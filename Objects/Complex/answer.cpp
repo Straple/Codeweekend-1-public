@@ -14,8 +14,12 @@ std::ostream &operator<<(std::ostream &output, const Answer &answer) {
     json["gold"] = answer.gold;
     json["level"] = answer.level;
     json["fatigue"] = answer.fatigue;
+    json["window_len"] = answer.window_len;
+    json["fatigue_weight"] = answer.fatigue_weight;
+    json["enable_stop"] = answer.enable_stop;
     json["random_seed"] = answer.random_seed;
     json["monsters_order"] = answer.monsters_order;
+    json["last_monster_i"] = answer.last_monster_i;
 
     for (auto action: answer.actions) {
         if (action.type == Action::Action_t::ATTACK) {
@@ -47,9 +51,14 @@ std::istream &operator>>(std::istream &input, Answer &answer) {
         answer.gold = json["gold"];
         answer.level = json["level"];
         answer.fatigue = json["fatigue"];
-        if(json.contains("random_seed")) {
+
+        answer.window_len = json["window_len"];
+        answer.fatigue_weight = json["fatigue_weight"];
+        answer.enable_stop = json["enable_stop"];
+        if (json.contains("random_seed")) {
             answer.random_seed = json["random_seed"];
         }
+
         answer.monsters_order = std::vector<uint32_t>(json["monsters_order"]);
 
         for (auto &action: json["moves"]) {

@@ -73,13 +73,13 @@ void run_solver(const std::string &dirname) {
 
     std::vector<uint32_t> tests = {
 
-            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
-            //26, 27, 28, 29, 30, 31, 32, 33, 34, 35, /*36, 37,*/ 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50
+            //1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+            26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50
     };
 
     std::ofstream logger("log.csv");
 
-    logger << "message,thr,test,gold,solve time,total time" << std::endl;
+    logger << "message,changes,thr,test,gold,solve time,total time" << std::endl;
 
     Timer timer;
     std::vector<TestData> tests_data(51);
@@ -172,10 +172,10 @@ void run_solver(const std::string &dirname) {
                 output << answer;
 
                 std::unique_lock locker(mutex);
-                logger << "improve " << old_gold * 1000ULL / MAX_RAW_SCORES[test] << " -> " << answer.gold * 1000ULL / MAX_RAW_SCORES[test] << "," << thr << ',' << test << ',' << answer.gold << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
+                logger << "improve," << old_gold * 1000ULL / MAX_RAW_SCORES[test] << " -> " << answer.gold * 1000ULL / MAX_RAW_SCORES[test] << "," << thr << ',' << test << ',' << answer.gold << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
             } else {
                 std::unique_lock locker(mutex);
-                logger << "failed " << old_gold * 1000ULL / MAX_RAW_SCORES[test] << " -> " << answer.gold * 1000ULL / MAX_RAW_SCORES[test] << "," << thr << ',' << test << ',' << answer.gold << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
+                logger << "failed," << old_gold * 1000ULL / MAX_RAW_SCORES[test] << " -> " << answer.gold * 1000ULL / MAX_RAW_SCORES[test] << "," << thr << ',' << test << ',' << answer.gold << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
             }
 
             unlock(test);
@@ -295,13 +295,14 @@ void launch_tests(const std::string &solutions_dir, uint32_t left_test, uint32_t
 
 int main() {
 
-    //run_solver("Solutions");
+    //run_solver("Solutions3");
     //return 0;
 
     // в ответах у меня: 16680
-    // сейчас получаю: 8123
-    launch_tests("Solutions3", 26, 50);
-    // print_compare_scores("Solutions_kek", 1, 25);
+    // сейчас получаю: 8123 -> 9114 -> 9929 -> 10256 -> 10573 -> 11263 -> 11780
+    // подольше запустить: 15320.5
+    //launch_tests("Solutions3", 26, 50);
+    print_compare_scores("Solutions3", 26, 50);
 
     // print_compare_simulates("Solutions3", 1, 25);
     return 0;

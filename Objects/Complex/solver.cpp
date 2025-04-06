@@ -11,17 +11,24 @@ bool compare(double old_score, double cur_score, double temp, Randomizer &rnd) {
 }
 
 Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_seed, const TestData &test_data) {
-
     Answer answer;
     answer.x = test_data.start_x;
     answer.y = test_data.start_y;
     answer.monsters_order = monsters_order;
 
-    Randomizer rnd(random_seed);
+    //Randomizer rnd(random_seed);
 
     std::vector<bool> is_killed(test_data.monsters.size());
 
     ASSERT(test_data.monsters_order.size() == monsters_order.size(), "invalid monsters order");
+
+    if (test_data.test_id == 36 || test_data.test_id == 37) {
+        uint32_t speed = (test_data.hero.base_speed * (100 + answer.level * test_data.hero.level_speed_coeff)) / 100;
+        while (answer.y + 2 * speed <= test_data.height) {
+            answer.actions.push_back({Action::Action_t::MOVE, answer.x, answer.y + speed, 0});
+            answer.y += speed;
+        }
+    }
 
     for (uint32_t monster_it = 0; monster_it < monsters_order.size(); monster_it++) {
         uint32_t monster_id = monsters_order[monster_it];
@@ -54,17 +61,17 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_see
                 uint32_t best_to_x = answer.x;
                 uint32_t best_to_y = answer.y;
 
-                uint32_t px = 0;
-                uint32_t py = 0;
-
                 double dx = static_cast<int>(monster.x) - static_cast<int>(answer.x);
                 double dy = static_cast<int>(monster.y) - static_cast<int>(answer.y);
                 double len = std::sqrt(dx * dx + dy * dy);
                 dx /= len;
                 dy /= len;
                 len = std::min(speed * 1.0 - 1, len - 1);
-                px = answer.x + dx * len;
-                py = answer.y + dy * len;
+                if (answer.enable_stop && monster.range < range) {
+                    len = std::min(speed * 1.0, len - monster.range * 1.0);
+                }
+                uint32_t px = answer.x + dx * len;
+                uint32_t py = answer.y + dy * len;
 
                 uint32_t left_x = px < answer.window_len ? 0 : px - answer.window_len;
                 uint32_t right_x = std::min(px + answer.window_len, test_data.width);
@@ -73,11 +80,9 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_see
                 uint32_t right_y = std::min(py + answer.window_len, test_data.height);
 
                 auto get_dot_score = [&](uint32_t to_x, uint32_t to_y) {
-                    // 22008
                     int64_t score;
                     score -= get_dist(to_x, to_y, monster.x, monster.y);
 
-                    // 22217
                     if (get_dist(to_x, to_y, monster.x, monster.y) <= range * range) {
                         score = 1'000'000;
 
@@ -86,16 +91,19 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_see
                             const auto &monster = test_data.monsters[answer.monsters_order[it]];
                             score -= get_dist(to_x, to_y, monster.x, monster.y);
                         }
-
-                        /*for (uint32_t it = monster_it; it < answer.monsters_order.size(); it++) {
-                            const auto &monster = test_data.monsters[answer.monsters_order[it]];
-                            if (get_dist(to_x, to_y, monster.x, monster.y) > range * range) {
-                                score -= get_dist(to_x, to_y, monster.x, monster.y);
-                                break;
-                            }
-                            score += 100'000;
-                        }*/
                     }
+
+                    uint64_t fatigue = 0;
+                    {
+                        uint32_t pos = to_y * (test_data.width + 1) + to_x;
+                        for (uint32_t m: test_data.monsters_attack[pos]) {
+                            if (!is_killed[m]) {
+                                fatigue += test_data.monsters[m].attack;
+                            }
+                        }
+                        fatigue = std::min((uint64_t)1'000'000'000, fatigue);
+                    }
+                    score -= fatigue * answer.fatigue_weight;
                     return score;
                 };
 
@@ -117,49 +125,13 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_see
                         }
                     }
                 }
-                // умный выбор точки, но медленный
-                /*std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> dots;
-
-                    for (uint32_t to_y = left_y; to_y <= right_y; to_y++) {
-                        for (uint32_t to_x = left_x; to_x <= right_x; to_x++) {
-                            // не можем допрыгнуть туда
-                            if (get_dist(answer.x, answer.y, to_x, to_y) > speed * speed) {
-                                continue;
-                            }
-
-                            uint32_t dist = get_dist(to_x, to_y, monster.x, monster.y);
-                            dots.emplace_back(dist, to_x, to_y);
-                        }
-                    }
-
-                    {
-                        uint32_t monster_iter = monster_it;
-                        while (monster_iter < monsters_order.size()) {
-                            const auto &cur_monster = test_data.monsters[monsters_order[monster_iter]];
-                            for (auto &[dist, to_x, to_y]: dots) {
-                                dist = get_dist(to_x, to_y, cur_monster.x, cur_monster.y);
-                            }
-                            std::sort(dots.begin(), dots.end());
-
-                            if (std::get<0>(dots[0]) > range * range) {
-                                break;
-                            }
-
-                            while (std::get<0>(dots.back()) > range * range) {
-                                dots.pop_back();
-                            }
-                            monster_iter++;
-                        }
-
-                        std::tie(best_dist, best_to_x, best_to_y) = dots[0];
-                    }*/
 
                 return {best_to_x, best_to_y};
             };
 
             auto [to_x, to_y] = get_move_to();
             ASSERT(get_dist(answer.x, answer.y, to_x, to_y) <= speed * speed, "too far to move");
-            ASSERT(!(to_x == answer.x && to_y == answer.y), "invalid to");
+            //ASSERT(!(to_x == answer.x && to_y == answer.y), "invalid to");
 
             answer.actions.push_back({Action::Action_t::MOVE, to_x, to_y, 0});
             answer.x = to_x;
@@ -670,11 +642,12 @@ bool Solver::try_change_settings(Randomizer &rnd) {
 
     double p = rnd.get_d();
 
-    if (p < 5) {
-        //new_answer.random_seed = rnd.get();
+    if (p < 0.4) {
         new_answer.window_len = rnd.get(1, 6);
+    } else if (p < 0.8) {
+        new_answer.fatigue_weight = rnd.get(1, 30'000);
     } else {
-        // TODO
+        new_answer.enable_stop = rnd.get(0, 1);
     }
 
     new_answer = simulate(new_answer.monsters_order, new_answer.random_seed, test_data);
@@ -755,7 +728,7 @@ Answer Solver::solve(uint64_t random_seed) {
     for (;
          //step <= 2'000'000
          ; step++) {
-        if (step % 10 == 0 && timer.get_ms() > 30'000) {
+        if (step % 10 == 0 && timer.get_ms() > 600'000) {
             break;
         }
 

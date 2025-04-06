@@ -95,7 +95,7 @@ def update_display_name(new_name):
 
 def mysubmit(test_id):
     try:
-        filename = "../Solutions2/test_" + str(test_id) + ".json"
+        filename = "../Solutions3/test_" + str(test_id) + ".json"
         f = open(filename, "r")
         file_contents = f.read()
         s = submit(test_id, file_contents)
@@ -106,7 +106,7 @@ def mysubmit(test_id):
 
 
 def submit_all():
-    for i in range(25):
+    for i in range(50):
         mysubmit(i + 1)
 
 
@@ -128,21 +128,21 @@ def print_max_raw_scores(scoreboard):
     print("}")
 
 
-# submit_all()
+submit_all()
 
 scoreboard = get_scoreboard()
 
-print_max_raw_scores(scoreboard)
+#print_max_raw_scores(scoreboard)
 
-exit(0)
+#exit(0)
 
 total_relative_score = 0
 for team in scoreboard["teams"]:
     if team["team_members"] == "Egor Yukhnevich":
         tasks = team["tasks"]
         for task in tasks:
-            if task["task_id"] > 25:
-                break
+            if task["task_id"] <= 25:
+                continue
             print(task["task_id"], int(task["relative_score"]), int(task["raw_score"]))
             total_relative_score += task["relative_score"]
 
