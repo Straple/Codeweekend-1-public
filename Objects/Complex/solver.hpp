@@ -4,7 +4,7 @@
 #include <Objects/Complex/answer.hpp>
 #include <Objects/Complex/test_data.hpp>
 
-Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_seed, const TestData &test_data);
+Answer simulate(Answer answer, const TestData &test_data);
 
 class Solver {
 

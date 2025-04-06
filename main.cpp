@@ -74,8 +74,7 @@ void run_solver(const std::string &dirname) {
     std::vector<uint32_t> tests = {
 
             //1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
-            26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50
-    };
+            26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50};
 
     std::ofstream logger("log.csv");
 
@@ -198,7 +197,7 @@ void print_compare_simulates(const std::string &solutions_dir, uint32_t left_tes
             input >> answer;
         }
 
-        Answer new_answer = simulate(answer.monsters_order, answer.random_seed, test_data);
+        Answer new_answer = simulate(answer, test_data);
 
         double p = ((int) new_answer.gold - (int) answer.gold) * 100.0 / answer.gold;
         total_p += p;
@@ -224,6 +223,9 @@ void print_compare_scores(const std::string &solutions_dir, uint32_t left_test, 
                 input >> answer;
             }
         }
+
+        //Answer expected = simulate(answer.monsters_order, test_data);
+        //ASSERT(answer.gold == expected.gold, "invalid answer");
 
         double score = answer.gold * 1000.0 / MAX_RAW_SCORES[test];
         total += score;
@@ -295,14 +297,13 @@ void launch_tests(const std::string &solutions_dir, uint32_t left_test, uint32_t
 
 int main() {
 
-    //run_solver("Solutions3");
-    //return 0;
+    run_solver("Solutions3");
 
     // в ответах у меня: 16680
-    // сейчас получаю: 8123 -> 9114 -> 9929 -> 10256 -> 10573 -> 11263 -> 11780
+    // сейчас получаю: 8123 -> 9114 -> 9929 -> 10256 -> 10573 -> 11263 -> 11780 -> 12812 -> 13731
     // подольше запустить: 15320.5
-    //launch_tests("Solutions3", 26, 50);
-    print_compare_scores("Solutions3", 26, 50);
+    // launch_tests("Solutions3", 26, 50);
+    // print_compare_scores("Solutions3", 26, 50);
 
     // print_compare_simulates("Solutions3", 1, 25);
     return 0;

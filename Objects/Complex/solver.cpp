@@ -10,17 +10,20 @@ bool compare(double old_score, double cur_score, double temp, Randomizer &rnd) {
     return cur_score >= old_score || rnd.get_d() < std::exp(-((old_score - cur_score) / old_score) / (temp * 0.001));
 }
 
-Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_seed, const TestData &test_data) {
-    Answer answer;
+Answer simulate(Answer answer, const TestData &test_data) {
     answer.x = test_data.start_x;
     answer.y = test_data.start_y;
-    answer.monsters_order = monsters_order;
-
-    //Randomizer rnd(random_seed);
+    answer.exp = 0;
+    answer.gold = 0;
+    answer.level = 0;
+    answer.fatigue = 0;
+    answer.last_monster_i = 0;
+    answer.score = 0;
+    answer.actions.clear();
 
     std::vector<bool> is_killed(test_data.monsters.size());
 
-    ASSERT(test_data.monsters_order.size() == monsters_order.size(), "invalid monsters order");
+    ASSERT(test_data.monsters_order.size() == answer.monsters_order.size(), "invalid monsters order");
 
     if (test_data.test_id == 36 || test_data.test_id == 37) {
         uint32_t speed = (test_data.hero.base_speed * (100 + answer.level * test_data.hero.level_speed_coeff)) / 100;
@@ -30,8 +33,8 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_see
         }
     }
 
-    for (uint32_t monster_it = 0; monster_it < monsters_order.size(); monster_it++) {
-        uint32_t monster_id = monsters_order[monster_it];
+    for (uint32_t monster_it = 0; monster_it < answer.monsters_order.size(); monster_it++) {
+        uint32_t monster_id = answer.monsters_order[monster_it];
         const auto &monster = test_data.monsters[monster_id];
 
         uint32_t speed = (test_data.hero.base_speed * (100 + answer.level * test_data.hero.level_speed_coeff)) / 100;
@@ -101,13 +104,16 @@ Answer simulate(const std::vector<uint32_t> &monsters_order, uint64_t random_see
                                 fatigue += test_data.monsters[m].attack;
                             }
                         }
-                        fatigue = std::min((uint64_t)1'000'000'000, fatigue);
+                        fatigue = std::min((uint64_t) 1'000'000'000, fatigue);
                     }
                     score -= fatigue * answer.fatigue_weight;
+                    if(fatigue > 1'000'000){
+                        score = -1e18;
+                    }
                     return score;
                 };
 
-                int64_t best_score = -1e18;
+                int64_t best_score = -1e17;
 
                 for (uint32_t to_y = left_y; to_y <= right_y; to_y++) {
                     for (uint32_t to_x = left_x; to_x <= right_x; to_x++) {
@@ -485,7 +491,7 @@ bool Solver::try_swap(Randomizer &rnd) {
 
     Answer new_answer = answer;
     std::swap(new_answer.monsters_order[a], new_answer.monsters_order[b]);
-    new_answer = simulate(new_answer.monsters_order, new_answer.random_seed, test_data);
+    new_answer = simulate(new_answer, test_data);
 
     if (compare(answer.score, new_answer.score, temp, rnd)) {
         answer = std::move(new_answer);
@@ -504,7 +510,7 @@ bool Solver::try_insert(Randomizer &rnd) {
 
     new_answer.monsters_order.insert(new_answer.monsters_order.begin() + rnd.get(0, new_answer.monsters_order.size()), monster_id);
 
-    new_answer = simulate(new_answer.monsters_order, new_answer.random_seed, test_data);
+    new_answer = simulate(new_answer, test_data);
 
     if (compare(answer.score, new_answer.score, temp, rnd)) {
         answer = std::move(new_answer);
@@ -526,7 +532,7 @@ bool Solver::try_move(Randomizer &rnd) {
 
     new_answer.monsters_order.insert(new_answer.monsters_order.begin() + rnd.get(left, right), monster_id);
 
-    new_answer = simulate(new_answer.monsters_order, new_answer.random_seed, test_data);
+    new_answer = simulate(new_answer, test_data);
 
     if (compare(answer.score, new_answer.score, temp, rnd)) {
         answer = std::move(new_answer);
@@ -571,7 +577,7 @@ bool Solver::try_insert_smart(Randomizer &rnd) {
         }
     }
 
-    new_answer = simulate(new_answer.monsters_order, new_answer.random_seed, test_data);
+    new_answer = simulate(new_answer, test_data);
 
     if (compare(answer.score, new_answer.score, temp, rnd)) {
         answer = std::move(new_answer);
@@ -600,7 +606,7 @@ bool Solver::try_insert_segment(Randomizer &rnd) {
         new_answer.monsters_order.insert(new_answer.monsters_order.begin() + rnd.get(0, new_answer.monsters_order.size()), monsters.begin(), monsters.end());
     }
 
-    new_answer = simulate(new_answer.monsters_order, new_answer.random_seed, test_data);
+    new_answer = simulate(new_answer, test_data);
 
     if (compare(answer.score, new_answer.score, temp, rnd)) {
         answer = std::move(new_answer);
@@ -627,7 +633,7 @@ bool Solver::try_reverse(Randomizer &rnd) {
     std::reverse(new_answer.monsters_order.begin() + l, new_answer.monsters_order.begin() + r);
     //std::shuffle(new_answer.monsters_order.begin() + l, new_answer.monsters_order.begin() + r, rnd.generator);
 
-    new_answer = simulate(new_answer.monsters_order, new_answer.random_seed, test_data);
+    new_answer = simulate(new_answer, test_data);
 
     if (compare(answer.score, new_answer.score, temp, rnd)) {
         answer = std::move(new_answer);
@@ -643,14 +649,14 @@ bool Solver::try_change_settings(Randomizer &rnd) {
     double p = rnd.get_d();
 
     if (p < 0.4) {
-        new_answer.window_len = rnd.get(1, 6);
+        new_answer.window_len = rnd.get(1, 15);
     } else if (p < 0.8) {
         new_answer.fatigue_weight = rnd.get(1, 30'000);
     } else {
         new_answer.enable_stop = rnd.get(0, 1);
     }
 
-    new_answer = simulate(new_answer.monsters_order, new_answer.random_seed, test_data);
+    new_answer = simulate(new_answer, test_data);
 
     if (compare(answer.score, new_answer.score, temp, rnd)) {
         answer = std::move(new_answer);
@@ -663,7 +669,7 @@ bool Solver::try_change_settings(Randomizer &rnd) {
 Solver::Solver(std::vector<uint32_t> copy_monsters_order, TestData copy_test_data) : test_data(std::move(copy_test_data)) {
     ASSERT(!test_data.monsters.empty(), "monsters is empty");
     answer.monsters_order = std::move(copy_monsters_order);
-    answer = simulate(answer.monsters_order, answer.random_seed, test_data);
+    answer = simulate(answer, test_data);
 }
 
 Solver::Solver(TestData copy_test_data) : test_data(std::move(copy_test_data)) {
@@ -671,7 +677,7 @@ Solver::Solver(TestData copy_test_data) : test_data(std::move(copy_test_data)) {
     answer.monsters_order = test_data.monsters_order;
     //answer.monsters_order.resize(test_data.monsters.size());
     //std::iota(answer.monsters_order.begin(), answer.monsters_order.end(), 0);
-    answer = simulate(answer.monsters_order, answer.random_seed, test_data);
+    answer = simulate(answer, test_data);
 }
 
 Answer Solver::solve(uint64_t random_seed) {
@@ -728,7 +734,7 @@ Answer Solver::solve(uint64_t random_seed) {
     for (;
          //step <= 2'000'000
          ; step++) {
-        if (step % 10 == 0 && timer.get_ms() > 600'000) {
+        if (step % 10 == 0 && timer.get_ms() > 300'000) {
             break;
         }
 
