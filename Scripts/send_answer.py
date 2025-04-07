@@ -141,8 +141,8 @@ for team in scoreboard["teams"]:
     if team["team_members"] == "Egor Yukhnevich":
         tasks = team["tasks"]
         for task in tasks:
-            if task["task_id"] <= 25:
-                continue
+            #if task["task_id"] <= 25:
+                #continue
             print(task["task_id"], int(task["relative_score"]), int(task["raw_score"]))
             total_relative_score += task["relative_score"]
 
