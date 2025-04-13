@@ -31,7 +31,7 @@ struct Answer {
     double score = 0;
 
     // настройки симуляции
-    uint32_t window_len = 6; // размер окна, в котором мы ищем точку прыжка
+    uint32_t window_len = 2; // размер окна, в котором мы ищем точку прыжка
     uint64_t random_seed = 0;
     int64_t fatigue_weight = 200;
     bool enable_stop = true;

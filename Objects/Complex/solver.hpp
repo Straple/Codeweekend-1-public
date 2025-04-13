@@ -29,6 +29,9 @@ class Solver {
     bool try_change_settings(Randomizer &rnd);
 
 public:
+
+    Solver(Answer answer, TestData test_data);
+
     Solver(std::vector<uint32_t> monsters_order, TestData test_data);
 
     explicit Solver(TestData test_data);

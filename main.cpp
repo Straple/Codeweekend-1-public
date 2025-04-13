@@ -3,6 +3,7 @@
 #include <Objects/Complex/answer.hpp>
 #include <Objects/Complex/solver.hpp>
 #include <Objects/Complex/test_data.hpp>
+#include <Objects/Complex/test_solver.hpp>
 #include <Objects/Tools/tools.hpp>
 
 #include <atomic>
@@ -182,6 +183,100 @@ void run_solver(const std::string &dirname) {
     });
 }
 
+void run_test_solver(const std::string &dirname) {
+
+    std::filesystem::create_directories(dirname);
+
+    std::vector<uint32_t> tests = {
+
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+            //26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50
+    };
+
+    std::ofstream logger("log.csv");
+
+    logger << "message,changes,thr,test,gold,solve time,total time" << std::endl;
+
+    Timer timer;
+    std::vector<TestSolver> test_solvers(51);
+    {
+        std::vector<TestData> tests_data(51);
+        for (uint32_t test = 1; test <= 50; test++) {
+            Timer timer;
+            std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
+            input >> tests_data[test];
+            std::cout << "reading tests data(" << test << "): " << timer << std::endl;
+        }
+        std::cout << "Total reading tests data: " << timer << std::endl;
+
+        for (uint32_t test = 1; test <= 50; test++) {
+            test_solvers[test] = TestSolver(tests_data[test], dirname + "/" + std::to_string(test));
+        }
+    }
+
+    std::vector<std::atomic<bool>> is_free(51);
+    for (auto &i: is_free) {
+        i = true;
+    }
+
+    Timer total_timer;
+
+    std::mutex mutex;
+
+    auto lock = [&](uint32_t test) {
+        bool expected = true;
+        if (is_free[test].compare_exchange_strong(expected, false)) {
+            return true;
+        } else {
+            return false;
+        }
+    };
+
+    auto unlock = [&](uint32_t test) {
+        is_free[test] = true;
+    };
+
+    launch_threads(THREADS, [&](uint32_t thr) {
+        Randomizer rnd(thr * 6124231ULL + RANDOM_SEED);
+        while (!std::filesystem::exists("exit")) {
+            uint32_t test = rnd.get(tests);
+
+            if (!lock(test)) {
+                continue;
+            }
+
+            Timer timer;
+
+            std::string filename = dirname + "/test_" + std::to_string(test) + ".json";
+
+            auto &solver = test_solvers[test];
+
+            auto old_answer = solver.get_best();
+
+            if (rnd.get_d() < 0.5) {
+                solver.add(rnd);
+            } else {
+                solver.improve(rnd);
+            }
+
+            auto cur_answer = solver.get_best();
+
+            if (old_answer.gold < cur_answer.gold) {
+                std::ofstream output(filename);
+                output << cur_answer;
+
+                std::unique_lock locker(mutex);
+                logger << "improve," << old_answer.gold * 1000ULL / MAX_RAW_SCORES[test] << " -> " << cur_answer.gold * 1000ULL / MAX_RAW_SCORES[test] << "," << thr << ',' << test << ',' << cur_answer.gold << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
+            } else {
+                std::unique_lock locker(mutex);
+                logger << "failed," << old_answer.gold * 1000ULL / MAX_RAW_SCORES[test] << " -> " << cur_answer.gold * 1000ULL / MAX_RAW_SCORES[test] << "," << thr << ',' << test << ',' << cur_answer.gold << ',' << timer.get_ms() / 1000.0 << ',' << total_timer.get_ms() / 1000.0 << std::endl;
+            }
+
+            unlock(test);
+        }
+    });
+}
+
 void print_compare_simulates(const std::string &solutions_dir, uint32_t left_test, uint32_t right_test) {
     double total_p = 0;
     for (uint32_t test = left_test; test <= right_test; test++) {
@@ -297,7 +392,8 @@ void launch_tests(const std::string &solutions_dir, uint32_t left_test, uint32_t
 
 int main() {
 
-    // run_solver("Solutions3");
+    run_test_solver("Solutions4");
+    //run_solver("Solutions3");
 
     // в ответах у меня: 16680
     // сейчас получаю: 8123 -> 9114 -> 9929 -> 10256 -> 10573 -> 11263 -> 11780 -> 12812 -> 13731
@@ -306,17 +402,37 @@ int main() {
     // print_compare_scores("Solutions3", 26, 50);
 
     // print_compare_simulates("Solutions3", 1, 25);
-    return 0;
+    // return 0;
 
-    uint32_t test = 20;
+    /*uint32_t test = 20;
     TestData test_data;
     {
         std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
         input >> test_data;
     }
 
-    Solver solver(test_data);
+    TestSolver test_solver(test_data, "Solutions3");
+    Randomizer rnd;
+    std::ofstream output("log");
+    while (true) {
+        if (rnd.get_d() < 0.5) {
+            test_solver.add(rnd);
+        } else {
+            test_solver.improve(rnd);
+        }
+        test_solver.print_state(output);
+
+        //test_solver.write("Solutions3");
+    }*/
+
+    /*Answer from_ans;
+    {
+        std::ifstream input("test_" + std::to_string(test) + ".json");
+        input >> from_ans;
+    }
+
+    Solver solver(from_ans.monsters_order, test_data);
     Answer answer = solver.solve(303);
     std::ofstream output("test_" + std::to_string(test) + ".json");
-    output << answer;
+    output << answer;*/
 }

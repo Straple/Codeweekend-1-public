@@ -83,7 +83,7 @@ Answer simulate(Answer answer, const TestData &test_data) {
                 uint32_t right_y = std::min(py + answer.window_len, test_data.height);
 
                 auto get_dot_score = [&](uint32_t to_x, uint32_t to_y) {
-                    int64_t score;
+                    int64_t score = 0;
                     score -= get_dist(to_x, to_y, monster.x, monster.y);
 
                     if (get_dist(to_x, to_y, monster.x, monster.y) <= range * range) {
@@ -107,7 +107,7 @@ Answer simulate(Answer answer, const TestData &test_data) {
                         fatigue = std::min((uint64_t) 1'000'000'000, fatigue);
                     }
                     score -= fatigue * answer.fatigue_weight;
-                    if(fatigue > 1'000'000){
+                    if (fatigue > 1'000'000) {
                         score = -1e18;
                     }
                     return score;
@@ -137,7 +137,6 @@ Answer simulate(Answer answer, const TestData &test_data) {
 
             auto [to_x, to_y] = get_move_to();
             ASSERT(get_dist(answer.x, answer.y, to_x, to_y) <= speed * speed, "too far to move");
-            //ASSERT(!(to_x == answer.x && to_y == answer.y), "invalid to");
 
             answer.actions.push_back({Action::Action_t::MOVE, to_x, to_y, 0});
             answer.x = to_x;
@@ -631,7 +630,6 @@ bool Solver::try_reverse(Randomizer &rnd) {
     ASSERT(0 <= l && l < r && r < new_answer.monsters_order.size(), "invalid segment");
 
     std::reverse(new_answer.monsters_order.begin() + l, new_answer.monsters_order.begin() + r);
-    //std::shuffle(new_answer.monsters_order.begin() + l, new_answer.monsters_order.begin() + r, rnd.generator);
 
     new_answer = simulate(new_answer, test_data);
 
@@ -648,7 +646,7 @@ bool Solver::try_change_settings(Randomizer &rnd) {
 
     double p = rnd.get_d();
 
-    if (p < 0.4) {
+    if (false && p < 0.4) {
         new_answer.window_len = rnd.get(1, 15);
     } else if (p < 0.8) {
         new_answer.fatigue_weight = rnd.get(1, 30'000);
@@ -666,6 +664,10 @@ bool Solver::try_change_settings(Randomizer &rnd) {
     }
 }
 
+Solver::Solver(Answer copy_answer, TestData copy_test_data) : answer(std::move(copy_answer)), test_data(std::move(copy_test_data)) {
+    ASSERT(!test_data.monsters.empty(), "monsters is empty");
+}
+
 Solver::Solver(std::vector<uint32_t> copy_monsters_order, TestData copy_test_data) : test_data(std::move(copy_test_data)) {
     ASSERT(!test_data.monsters.empty(), "monsters is empty");
     answer.monsters_order = std::move(copy_monsters_order);
@@ -675,8 +677,6 @@ Solver::Solver(std::vector<uint32_t> copy_monsters_order, TestData copy_test_dat
 Solver::Solver(TestData copy_test_data) : test_data(std::move(copy_test_data)) {
     ASSERT(!test_data.monsters.empty(), "monsters is empty");
     answer.monsters_order = test_data.monsters_order;
-    //answer.monsters_order.resize(test_data.monsters.size());
-    //std::iota(answer.monsters_order.begin(), answer.monsters_order.end(), 0);
     answer = simulate(answer, test_data);
 }
 
@@ -687,7 +687,7 @@ Answer Solver::solve(uint64_t random_seed) {
 
     Answer best_answer = answer;
 
-    double raw_temp = 0.2;
+    double temp_raw = 0.2;
     double temp_mult = 1;
 
     // test: 3
@@ -706,8 +706,8 @@ Answer Solver::solve(uint64_t random_seed) {
     // gold: 702002, score: 702002, step: 2000000, time: 86.2481s, temp: 2.00938e-05
     //
     // gold: 693000, score: 693000, step: 2000000, time: 121.553s, temp: 0.000125784
-    // gold: 646023, score: 646023, step: 500000, time: 122.553s, max_temp: 0.299328, raw_temp: 0.00673771, temp_mult: 15.1948
-    // gold: 674002, score: 674002, step: 500000, time: 119.056s, max_temp: 0.0887038, raw_temp: 0.00673771, temp_mult: 13.1717
+    // gold: 646023, score: 646023, step: 500000, time: 122.553s, max_temp: 0.299328, temp_raw: 0.00673771, temp_mult: 15.1948
+    // gold: 674002, score: 674002, step: 500000, time: 119.056s, max_temp: 0.0887038, temp_raw: 0.00673771, temp_mult: 13.1717
     // gold: 673002, score: 673002, step: 2000000, time: 142.103s, temp: 0.3
     // ========================================================================================
     // test: 21
@@ -732,46 +732,17 @@ Answer Solver::solve(uint64_t random_seed) {
     uint32_t step = 0;
     double max_temp = 0;
     for (;
-         //step <= 2'000'000
+         //step <= 10'000
          ; step++) {
-        if (step % 10 == 0 && timer.get_ms() > 300'000) {
+        if (step % 10 == 0 && timer.get_ms() > 10'000) {
             break;
         }
 
-        temp = raw_temp * temp_mult;
+        temp = temp_raw * temp_mult;
         max_temp = std::max(temp, max_temp);
         double old_score = answer.score;
 
         double p = rnd.get_d();
-        // try_swap(rnd); // 319002
-        // try_insert(rnd); // 393031
-        // try_insert_smart(rnd); // 518113
-        // try_reverse(rnd);// 263057
-
-
-        // ~20200
-        /*if (p < 0.5) {
-            try_insert_smart(rnd);
-        } else if (p < 0.8) {
-            try_insert(rnd);
-        } else {
-            try_reverse(rnd);
-        }*/
-
-        // 16155
-        // try_insert_smart(rnd);
-
-        // 16556
-        // try_insert(rnd);
-
-        // 20639 -> 21305
-        /*if (p < 0.5) {
-            try_insert_smart(rnd);
-        } else if (p < 0.8) {
-            try_insert(rnd);
-        } else {
-            try_swap(rnd);
-        }*/
 
         if (p < 0.1) {
             try_change_settings(rnd);
@@ -785,21 +756,11 @@ Answer Solver::solve(uint64_t random_seed) {
             try_reverse(rnd);
         }
 
-        /*
-        if (p < 0.33) {
-            try_swap(rnd);
-        } else if (p < 0.66) {
-            try_move(rnd);
-        } else {
-            try_insert(rnd);
-        }
-         */
-
         if (answer.score > best_answer.score) {
             best_answer = answer;
         }
 
-        raw_temp = std::max(raw_temp * 0.99999, 0.00001);
+        temp_raw = std::max(temp_raw * 0.99999, 0.00001);
         if (old_score < answer.score) {
             // improve
             temp_mult = (temp_mult + 1) / 2;
@@ -809,7 +770,7 @@ Answer Solver::solve(uint64_t random_seed) {
         }
 
         if (step % 1'000 == 0) {
-            //std::cout << "gold: " << answer.gold << ", score: " << answer.score << ", step: " << step << ", time: " << timer << ", max_temp: " << max_temp << ", raw_temp: " << raw_temp << ", temp_mult: " << temp_mult << '\n';
+            //std::cout << "gold: " << answer.gold << ", score: " << answer.score << ", step: " << step << ", time: " << timer << ", max_temp: " << max_temp << ", temp_raw: " << temp_raw << ", temp_mult: " << temp_mult << '\n';
             max_temp = 0;
         }
     }

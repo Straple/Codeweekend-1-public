@@ -8,7 +8,6 @@ using json = nlohmann::json;
 void TestData::build() {
     // build monsters_order
     {
-        // TODO: tests 26-50
         // std::cout << "Test id: " << test_id << '\n';
         // (hp, exp, gold)
         // std::map<std::tuple<uint32_t, uint32_t, uint32_t>, uint32_t> map;
