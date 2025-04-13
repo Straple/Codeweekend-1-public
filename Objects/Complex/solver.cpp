@@ -687,8 +687,9 @@ Answer Solver::solve(uint64_t random_seed) {
 
     Answer best_answer = answer;
 
-    double temp_raw = 0.2;
+    double temp_raw = 0.1;
     double temp_mult = 1;
+    //uint32_t cnt_failed_improve = 0;
 
     // test: 3
     // gold: 197819, score: 237690, step: 1000000, time: 26.2046s, temp: 1.0025e-05
@@ -740,7 +741,7 @@ Answer Solver::solve(uint64_t random_seed) {
 
         temp = temp_raw * temp_mult;
         max_temp = std::max(temp, max_temp);
-        double old_score = answer.score;
+        //double old_score = answer.score;
 
         double p = rnd.get_d();
 
@@ -760,14 +761,17 @@ Answer Solver::solve(uint64_t random_seed) {
             best_answer = answer;
         }
 
-        temp_raw = std::max(temp_raw * 0.99999, 0.00001);
-        if (old_score < answer.score) {
+        temp_raw = std::max(temp_raw * 0.99999, 0.2);
+
+        // very bad works
+        /*if (old_score < answer.score) {
             // improve
-            temp_mult = (temp_mult + 1) / 2;
+            cnt_failed_improve = (cnt_failed_improve * 10) / 11;
         } else {
             // failed
-            temp_mult = std::min(temp_mult * 1.0005, 60'000.0);
+            cnt_failed_improve++;
         }
+        temp_mult = (1 + cnt_failed_improve / 300.0) / 2.0;*/
 
         if (step % 1'000 == 0) {
             //std::cout << "gold: " << answer.gold << ", score: " << answer.score << ", step: " << step << ", time: " << timer << ", max_temp: " << max_temp << ", temp_raw: " << temp_raw << ", temp_mult: " << temp_mult << '\n';

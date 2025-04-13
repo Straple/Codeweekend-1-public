@@ -399,7 +399,10 @@ int main() {
     // сейчас получаю: 8123 -> 9114 -> 9929 -> 10256 -> 10573 -> 11263 -> 11780 -> 12812 -> 13731
     // подольше запустить: 15320.5
     // launch_tests("Solutions3", 26, 50);
-    // print_compare_scores("Solutions3", 26, 50);
+
+    // Total: 22757.1 (Solutions4)
+    // Total: 23463.9 (Solutions_nice)
+    //print_compare_scores("Solutions4", 1, 25);
 
     // print_compare_simulates("Solutions3", 1, 25);
     // return 0;
@@ -409,9 +412,9 @@ int main() {
     {
         std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
         input >> test_data;
-    }
+    }*/
 
-    TestSolver test_solver(test_data, "Solutions3");
+    /*TestSolver test_solver(test_data, "Solutions3");
     Randomizer rnd;
     std::ofstream output("log");
     while (true) {

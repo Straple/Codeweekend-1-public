@@ -6,7 +6,7 @@
 #include <fstream>
 
 void TestSolver::mow() {
-    for (uint32_t i = 3; i < items.size(); i++) {
+    for (uint32_t i = 1; i < items.size(); i++) {
         if (items[i].cnt_failed_improve > 5) {
             ASSERT(i != 0, "remove best answer");
             std::cout << "remove: " << items[i].answer.gold << std::endl;
@@ -35,7 +35,7 @@ void TestSolver::improve(Randomizer &rnd) {
     }
     uint32_t i = 0;
 
-    if (rnd.get_d() < 0.3) {
+    if (true || rnd.get_d() < 0.3) {
         i = rnd.get(0, items.size() - 1);
     } else {
         for (; i + 1 < items.size() && rnd.get_d() < 0.93; i++) {}
@@ -50,11 +50,11 @@ void TestSolver::improve(Randomizer &rnd) {
         items[i].cnt_failed_improve = 0;
 
         // write answer
-        {
+        /*{
             std::ofstream output(dirname + "/" + std::to_string(answer.gold) + ".json");
             std::cout << "write improve: " << dirname + "/" + std::to_string(answer.gold) + ".json" << std::endl;
             output << answer;
-        }
+        }*/
     }
     items[i].answer = answer;
     bubble_sort(i);
@@ -68,7 +68,7 @@ void TestSolver::improve(Randomizer &rnd) {
 }
 
 void TestSolver::add(Randomizer &rnd) {
-    if (items.size() >= 50) {
+    if (items.size() >= 30) {
         return;
     }
     auto monsters_order = test_data.monsters_order;
@@ -85,11 +85,11 @@ void TestSolver::add(Randomizer &rnd) {
     mow();
 
     // write answer
-    {
+    /*{
         std::ofstream output(dirname + "/" + std::to_string(answer.gold) + ".json");
         std::cout << "write new:     " << dirname + "/" + std::to_string(answer.gold) + ".json" << std::endl;
         output << answer;
-    }
+    }*/
 
     // write log
     {
@@ -103,7 +103,7 @@ void TestSolver::print_state(std::ostream &output) const {
     for (auto &item: items) {
         output << "(" << item.answer.gold << "," << item.cnt_failed_improve << ")" << ' ';
     }
-    output << std::endl;
+    output << '\n';
 }
 
 void TestSolver::write(const std::string &dirname) const {

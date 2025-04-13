@@ -95,7 +95,7 @@ def update_display_name(new_name):
 
 def mysubmit(test_id):
     try:
-        filename = "../Solutions3/test_" + str(test_id) + ".json"
+        filename = "../Solutions4/test_" + str(test_id) + ".json"
         f = open(filename, "r")
         file_contents = f.read()
         s = submit(test_id, file_contents)
