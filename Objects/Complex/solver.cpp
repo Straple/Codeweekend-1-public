@@ -446,8 +446,6 @@ Answer Solver::solve(uint64_t random_seed) {
     Answer best_answer = answer;
 
     double temp_raw = 0.3;
-    double temp_mult = 1;
-    //uint32_t cnt_failed_improve = 0;
 
     // test: 3
     // gold: 197819, score: 237690, step: 1000000, time: 26.2046s, temp: 1.0025e-05
@@ -488,19 +486,16 @@ Answer Solver::solve(uint64_t random_seed) {
     // test: 28
     // gold: 40840, score: 40840, step: 2000000, time: 262.758s, temp: 1.20002e-05
     // gold: 38272, score: 38272, step: 108000, time: 60.3998s, temp: 7.19768e-05
-    uint32_t step = 0;
-    double max_temp = 0;
-    //uint32_t prev_step_updated = 0;
+    uint64_t step = 0;
+    uint64_t prev_step_updated = 0;
     for (;
          //step <= 100'000
          ; step++) {
-        if (step % 10 == 0 && timer.get_ms() > 10'000) {
-            break;
-        }
+        //if (step % 10 == 0 && timer.get_ms() > 10'000) {
+        //    break;
+        //}
 
-        temp = temp_raw * temp_mult;
-        max_temp = std::max(temp, max_temp);
-        //double old_score = answer.score;
+        temp = temp_raw;// * temp_mult;
 
         double p = rnd.get_d();
 
@@ -518,19 +513,19 @@ Answer Solver::solve(uint64_t random_seed) {
 
         if (answer.score > best_answer.score) {
             best_answer = answer;
-            //prev_step_updated = step;
+            prev_step_updated = step;
         }
 
-        temp_raw = std::max(temp_raw * 0.99999, 0.15);
+        temp_raw = std::max(temp_raw * 0.99999, 0.1);
 
         if (step % 1'000 == 0) {
-            //std::cout << "gold: " << answer.gold << ", score: " << answer.score << ", step: " << step << ", time: " << timer << ", max_temp: " << max_temp << ", temp_raw: " << temp_raw << ", temp_mult: " << temp_mult << '\n';
-            max_temp = 0;
+            //std::cout << "gold: " << answer.gold << ", score: " << answer.score << ", step: " << step << ", time: " << timer << ", temp_raw: " << temp_raw << ", temp_mult: " << temp_mult << '\n';
         }
 
-        //if(step - prev_step_updated > 10'000){
-        //    break;
-        //}
+        // долго не получается улучшить
+        if (step - prev_step_updated > 15'000) {
+            break;
+        }
     }
     //std::cout << "best:\n";
     //std::cout << "gold: " << best_answer.gold << ", score: " << best_answer.score << ", step: " << step - 1 << ", time: " << timer << ", temp: " << temp << '\n';

@@ -390,7 +390,7 @@ void launch_tests(const std::string &solutions_dir, uint32_t left_test, uint32_t
 
 int main() {
 
-    //run_test_solver("Solutions4");
+    run_test_solver("Solutions4");
     //run_solver("Solutions3");
 
     // в ответах у меня: 16680
@@ -398,9 +398,9 @@ int main() {
     // подольше запустить: 15320.5
     // launch_tests("Solutions3", 26, 50);
 
-    // Total: 23387.1 + 19669.9 (Solutions4)
+    // Total: 23549.4 + 20365.6 (Solutions4)
     // Total: 23463.9 + 20042.1 (Solutions_nice)
-    //print_compare_scores("Solutions4", 1, 25);
+    //print_compare_scores("Solutions4", 1, 50);
 
     // print_compare_simulates("Solutions3", 1, 25);
     // return 0;
