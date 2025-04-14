@@ -68,7 +68,7 @@ void TestSolver::improve(Randomizer &rnd) {
 }
 
 void TestSolver::add(Randomizer &rnd) {
-    if (items.size() >= 30) {
+    if (items.size() >= 10) {
         return;
     }
     auto monsters_order = test_data.monsters_order;
