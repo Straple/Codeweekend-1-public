@@ -521,7 +521,7 @@ Answer Solver::solve(uint64_t random_seed) {
         temp_raw = std::max(temp_raw * 0.99999, 0.15);
 
         if (step % 1'000 == 0) {
-            std::cout << "gold: " << answer.gold << ", score: " << answer.score << ", step: " << step << ", time: " << timer << ", max_temp: " << max_temp << ", temp_raw: " << temp_raw << ", temp_mult: " << temp_mult << '\n';
+            //std::cout << "gold: " << answer.gold << ", score: " << answer.score << ", step: " << step << ", time: " << timer << ", max_temp: " << max_temp << ", temp_raw: " << temp_raw << ", temp_mult: " << temp_mult << '\n';
             max_temp = 0;
         }
     }

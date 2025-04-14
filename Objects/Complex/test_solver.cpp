@@ -7,7 +7,7 @@
 
 void TestSolver::mow() {
     for (uint32_t i = 1; i < items.size(); i++) {
-        if (items[i].cnt_failed_improve > 5) {
+        if (items[i].cnt_failed_improve > 3) {
             ASSERT(i != 0, "remove best answer");
             std::cout << "remove: " << items[i].answer.gold << std::endl;
             items.erase(items.begin() + i);

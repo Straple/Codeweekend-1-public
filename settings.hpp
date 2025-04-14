@@ -6,7 +6,7 @@
 
 constexpr uint32_t THREADS = 32;
 
-constexpr uint64_t RANDOM_SEED = 505;
+constexpr uint64_t RANDOM_SEED = 42;
 
 // tests 1-25, total score: 16031.87 -> 17657.83 -> 20650.61 -> 22010.01 -> 22687.59 -> 22955 -> 23463.9
 // tests 1-50, total score: 29330 -> 29573 -> 30517 -> 30858 -> 37083 -> 39641 -> 40322 -> 43713

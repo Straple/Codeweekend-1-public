@@ -188,10 +188,8 @@ void run_test_solver(const std::string &dirname) {
     std::filesystem::create_directories(dirname);
 
     std::vector<uint32_t> tests = {
-
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
-            //26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50
-    };
+            26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50};
 
     std::ofstream logger("log.csv");
 
@@ -400,7 +398,7 @@ int main() {
     // подольше запустить: 15320.5
     // launch_tests("Solutions3", 26, 50);
 
-    // Total: 22757.1 (Solutions4)
+    // Total: 23095.2 (Solutions4)
     // Total: 23463.9 (Solutions_nice)
     //print_compare_scores("Solutions4", 1, 25);
 
@@ -436,6 +434,7 @@ int main() {
 
     Solver solver(from_ans.monsters_order, test_data);
     Answer answer = solver.solve(303);
-    std::ofstream output("test_" + std::to_string(test) + ".json");
-    output << answer;*/
+    //std::ofstream output("test_" + std::to_string(test) + ".json");
+    //output << answer;
+    */
 }
