@@ -390,7 +390,7 @@ void launch_tests(const std::string &solutions_dir, uint32_t left_test, uint32_t
 
 int main() {
 
-    run_test_solver("Solutions4");
+    //run_test_solver("Solutions4");
     //run_solver("Solutions3");
 
     // в ответах у меня: 16680
@@ -398,14 +398,14 @@ int main() {
     // подольше запустить: 15320.5
     // launch_tests("Solutions3", 26, 50);
 
-    // Total: 23095.2 (Solutions4)
-    // Total: 23463.9 (Solutions_nice)
+    // Total: 23387.1 + 19669.9 (Solutions4)
+    // Total: 23463.9 + 20042.1 (Solutions_nice)
     //print_compare_scores("Solutions4", 1, 25);
 
     // print_compare_simulates("Solutions3", 1, 25);
     // return 0;
 
-    /*uint32_t test = 20;
+    /*uint32_t test = 48;
     TestData test_data;
     {
         std::ifstream input("Tests/test_" + std::to_string(test) + ".json");
@@ -428,13 +428,20 @@ int main() {
 
     /*Answer from_ans;
     {
-        std::ifstream input("test_" + std::to_string(test) + ".json");
+        std::ifstream input("Solutions4/test_" + std::to_string(test) + ".json");
         input >> from_ans;
     }
 
-    Solver solver(from_ans.monsters_order, test_data);
-    Answer answer = solver.solve(303);
+    Randomizer rnd(42);
+    uint32_t best = 0;
+    // 15710 ->
+    while (true) {
+        std::shuffle(from_ans.monsters_order.begin(), from_ans.monsters_order.end(), rnd.generator);
+        Solver solver(from_ans.monsters_order, test_data);
+        Answer answer = solver.solve(rnd.get());
+        best = std::max(best, answer.gold);
+        std::cout << "best: " << best << std::endl;
+    }*/
     //std::ofstream output("test_" + std::to_string(test) + ".json");
     //output << answer;
-    */
 }

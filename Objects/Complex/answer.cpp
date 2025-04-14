@@ -49,6 +49,7 @@ std::istream &operator>>(std::istream &input, Answer &answer) {
         answer.y = json["y"];
         answer.exp = json["exp"];
         answer.gold = json["gold"];
+        answer.score = answer.gold;
         answer.level = json["level"];
         answer.fatigue = json["fatigue"];
 

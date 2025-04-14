@@ -132,17 +132,17 @@ submit_all()
 
 scoreboard = get_scoreboard()
 
-#print_max_raw_scores(scoreboard)
+# print_max_raw_scores(scoreboard)
 
-#exit(0)
+# exit(0)
 
 total_relative_score = 0
 for team in scoreboard["teams"]:
     if team["team_members"] == "Egor Yukhnevich":
         tasks = team["tasks"]
         for task in tasks:
-            #if task["task_id"] <= 25:
-                #continue
+            # if task["task_id"] <= 25:
+            # continue
             print(task["task_id"], int(task["relative_score"]), int(task["raw_score"]))
             total_relative_score += task["relative_score"]
 

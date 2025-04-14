@@ -302,21 +302,22 @@ bool Solver::try_insert_smart(Randomizer &rnd) {
         new_answer = simulate(new_answer, test_data);
         test_data.num_turns = old_num_turns;
 
-        uint32_t range = (test_data.hero.base_range * (100 + new_answer.level * test_data.hero.level_range_coeff)) / 100;
-
         uint32_t k = new_answer.last_monster_i;
-        std::vector<uint32_t> available_monsters;
+        std::vector<std::pair<uint32_t, uint32_t>> available_monsters;
         for (uint32_t i = k + 1; i < new_answer.monsters_order.size(); i++) {
             uint32_t m = new_answer.monsters_order[i];
             auto &monster = test_data.monsters[m];
-            if (get_dist(new_answer.x, new_answer.y, monster.x, monster.y) <= range * range) {
-                available_monsters.push_back(m);
-            }
+            available_monsters.emplace_back(get_dist(new_answer.x, new_answer.y, monster.x, monster.y), m);
         }
-        std::shuffle(available_monsters.begin(), available_monsters.end(), rnd.generator);
+
+        std::sort(available_monsters.begin(), available_monsters.end(), std::greater<>());
         while (!available_monsters.empty()) {
-            uint32_t m = available_monsters.back();
+            auto [dist, m] = available_monsters.back();
             available_monsters.pop_back();
+
+            if (rnd.get_d() < 0.5) {
+                continue;
+            }
 
             new_answer.monsters_order.erase(std::find(new_answer.monsters_order.begin(), new_answer.monsters_order.end(), m));
             new_answer.monsters_order.insert(new_answer.monsters_order.begin() + k + 1, m);
@@ -489,6 +490,7 @@ Answer Solver::solve(uint64_t random_seed) {
     // gold: 38272, score: 38272, step: 108000, time: 60.3998s, temp: 7.19768e-05
     uint32_t step = 0;
     double max_temp = 0;
+    //uint32_t prev_step_updated = 0;
     for (;
          //step <= 100'000
          ; step++) {
@@ -516,6 +518,7 @@ Answer Solver::solve(uint64_t random_seed) {
 
         if (answer.score > best_answer.score) {
             best_answer = answer;
+            //prev_step_updated = step;
         }
 
         temp_raw = std::max(temp_raw * 0.99999, 0.15);
@@ -524,6 +527,10 @@ Answer Solver::solve(uint64_t random_seed) {
             //std::cout << "gold: " << answer.gold << ", score: " << answer.score << ", step: " << step << ", time: " << timer << ", max_temp: " << max_temp << ", temp_raw: " << temp_raw << ", temp_mult: " << temp_mult << '\n';
             max_temp = 0;
         }
+
+        //if(step - prev_step_updated > 10'000){
+        //    break;
+        //}
     }
     //std::cout << "best:\n";
     //std::cout << "gold: " << best_answer.gold << ", score: " << best_answer.score << ", step: " << step - 1 << ", time: " << timer << ", temp: " << temp << '\n';
